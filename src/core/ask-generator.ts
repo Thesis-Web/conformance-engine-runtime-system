@@ -40,9 +40,7 @@ function shouldGenerateAsk(f: Finding): boolean {
   }
   if (f.findingClass === 'DIFF') {
     return (
-      f.severity === 'critical' ||
-      f.severity === 'high' ||
-      f.confidenceClass === 'interpretive'
+      f.severity === 'critical' || f.severity === 'high' || f.confidenceClass === 'interpretive'
     );
   }
   if (f.findingClass === 'STALE') return f.resolutionPath !== undefined;
@@ -50,17 +48,15 @@ function shouldGenerateAsk(f: Finding): boolean {
 }
 
 export function generateAsks(findings: Finding[], pack: PackManifest): Ask[] {
-  return findings
-    .filter(shouldGenerateAsk)
-    .map((f) => ({
-      askId: randomUUID(),
-      runId: f.runId,
-      linkedFindingId: f.findingId,
-      packId: f.packId,
-      severity: f.severity,
-      askType: deriveAskType(f),
-      text: deriveAskText(f, pack),
-      requiredForCleanOutput:
-        f.escalationRequired || f.severity === 'critical' || f.severity === 'high',
-    }));
+  return findings.filter(shouldGenerateAsk).map((f) => ({
+    askId: randomUUID(),
+    runId: f.runId,
+    linkedFindingId: f.findingId,
+    packId: f.packId,
+    severity: f.severity,
+    askType: deriveAskType(f),
+    text: deriveAskText(f, pack),
+    requiredForCleanOutput:
+      f.escalationRequired || f.severity === 'critical' || f.severity === 'high',
+  }));
 }

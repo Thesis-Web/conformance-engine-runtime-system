@@ -1,13 +1,10 @@
-import type { RunRecord, CaseRecord } from '../types/index.js';
-import type { RunStatus } from '../types/index.js';
+import type { RunRecord, CaseRecord, RunStatus } from '../types/index.js';
 import { randomUUID } from 'node:crypto';
 import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isTerminal } from './state-machine.js';
-
 export function createRun(caseRecord: CaseRecord, artifactRoot: string): RunRecord {
   const runId = randomUUID();
-
   return {
     runId,
     caseId: caseRecord.caseId,
@@ -21,12 +18,13 @@ export function createRun(caseRecord: CaseRecord, artifactRoot: string): RunReco
     artifactRoot: join(artifactRoot, runId),
   };
 }
-
 export function saveRun(run: RunRecord): void {
   mkdirSync(run.artifactRoot, { recursive: true });
   writeFileSync(join(run.artifactRoot, 'run.json'), JSON.stringify(run, null, 2));
 }
-
+export function loadRun(runDir: string): RunRecord {
+  return JSON.parse(readFileSync(join(runDir, 'run.json'), 'utf8')) as RunRecord;
+}
 export function updateRunStatus(run: RunRecord, status: RunStatus): RunRecord {
   return {
     ...run,

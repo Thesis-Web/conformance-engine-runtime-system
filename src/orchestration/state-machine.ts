@@ -1,8 +1,6 @@
 import type { RunStatus } from '../types/index.js';
 
-export const VALID_TRANSITIONS: Readonly<
-  Partial<Record<RunStatus, ReadonlyArray<RunStatus>>>
-> = {
+export const VALID_TRANSITIONS: Readonly<Partial<Record<RunStatus, ReadonlyArray<RunStatus>>>> = {
   created: ['ingesting'],
   ingesting: ['ingested', 'failed'],
   ingested: ['classified', 'failed'],

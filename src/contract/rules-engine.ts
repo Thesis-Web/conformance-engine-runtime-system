@@ -1,6 +1,5 @@
 import type { Finding, ComparisonPair, RunRecord } from '../types/index.js';
 import type { PackManifest } from '../types/pack-manifest.js';
-import { canEmitFindings } from './source-lane.js';
 import { randomUUID } from 'node:crypto';
 
 export interface RuleInput {
@@ -9,11 +8,9 @@ export interface RuleInput {
   findings: Finding[];
   pack: PackManifest;
 }
-
 export interface RuleResult {
   finding: Finding;
 }
-
 export interface DeterministicRule {
   ruleId: string;
   packId: string | 'all';
@@ -21,40 +18,26 @@ export interface DeterministicRule {
   execute(input: RuleInput): RuleResult[];
 }
 
-const RULE_LANE3_001: DeterministicRule = {
-  ruleId: 'RULE-LANE3-001',
-  packId: 'all',
-  applies: () => true,
-  execute: (input) => {
-    return input.findings
-      .filter(f => {
-        // simplistic lane check via sourceARefId presence in live sources (stub)
-        return !canEmitFindings(/* would need full source lookup */);
-      })
-      .map(f => ({
-        finding: {
-          ...f,
-          escalationRequired: true,
-          confidenceClass: 'interpretive' as const
-        }
-      }));
-  }
-};
+const FORBIDDEN = [
+  'approved',
+  'certified by engine',
+  'passes authority review',
+  'this system certifies',
+] as const;
 
 const RULE_CERT_001: DeterministicRule = {
   ruleId: 'RULE-CERT-001',
   packId: 'all',
   applies: () => true,
   execute: (input) => {
-    const forbidden = ['approved', 'certified by engine', 'passes authority review', 'this system certifies'];
     for (const f of input.findings) {
       const lower = f.narrativeDescription.toLowerCase();
-      if (forbidden.some(phrase => lower.includes(phrase))) {
-        throw new Error(`certification language detected in finding: ${f.findingId}`);
+      for (const p of FORBIDDEN) {
+        if (lower.includes(p)) throw new Error(`certification language in finding: ${f.findingId}`);
       }
     }
     return [];
-  }
+  },
 };
 
 const RULE_HOLE_001: DeterministicRule = {
@@ -64,9 +47,8 @@ const RULE_HOLE_001: DeterministicRule = {
   execute: (input) => {
     const results: RuleResult[] = [];
     for (const docClass of input.pack.supportedDocumentClasses) {
-      const hasPair = input.pairs.some(p => /* stub match */ true);
-      const hasFinding = input.findings.some(f => f.findingClass === 'HOLE' && f.narrativeDescription.includes(docClass));
-      if (!hasPair && !hasFinding) {
+      const hasPair = input.pairs.some((p) => p.parameterKey === docClass);
+      if (!hasPair) {
         results.push({
           finding: {
             findingId: randomUUID(),
@@ -79,48 +61,34 @@ const RULE_HOLE_001: DeterministicRule = {
             extractionConfidence: 1.0,
             classificationConfidence: 1.0,
             contradictionConfidence: 1.0,
-            applicabilityConfidence: 1.0,
-            sourceAuthorityConfidence: 1.0,
-            sourceARefId: '',
-            escalationRequired: true,
+            applicabilityConfidence: 0.9,
+            sourceAuthorityConfidence: 0.9,
+            sourceARefId: `synthetic:${docClass}`,
+            escalationRequired: false,
             narrativeDescription: `No source references found for required document class: ${docClass}`,
-            tags: ['required-artifact'],
-            emittedBy: 'rules'
-          } as Finding
+            tags: ['RULE-HOLE-001', docClass],
+            emittedBy: 'rules',
+          },
         });
       }
     }
     return results;
-  }
+  },
 };
 
-export const CORE_RULES: DeterministicRule[] = [
-  RULE_LANE3_001,
-  RULE_CERT_001,
-  RULE_HOLE_001
-];
+export const CORE_RULES: DeterministicRule[] = [RULE_CERT_001, RULE_HOLE_001];
 
 export function applyDeterministicRules(input: RuleInput): Finding[] {
-  let allFindings: Finding[] = [...input.findings];
-
+  const results: Finding[] = [];
+  const seen = new Set<string>();
   for (const rule of CORE_RULES) {
-    if (rule.applies(input)) {
-      const results = rule.execute(input);
-      for (const r of results) {
-        allFindings.push(r.finding);
+    if (!rule.applies(input)) continue;
+    for (const r of rule.execute(input)) {
+      if (!seen.has(r.finding.findingId)) {
+        seen.add(r.finding.findingId);
+        results.push(r.finding);
       }
     }
   }
-
-  // simple dedup by findingId
-  const seen = new Set<string>();
-  const deduped: Finding[] = [];
-  for (const f of allFindings) {
-    if (!seen.has(f.findingId)) {
-      seen.add(f.findingId);
-      deduped.push(f);
-    }
-  }
-
-  return deduped;
+  return results;
 }

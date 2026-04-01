@@ -16,148 +16,311 @@
   "corpus": [
     {
       "corpusId": "title24-part6-2022",
-      "name": "California Title 24 Part 6 Energy Code 2022",
-      "description": "California Title 24 Part 6 energy efficiency standards relevant to high-rise building cases."
+      "authority": "primary",
+      "title": "California Title 24 Part 6 Energy Code 2022",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-highrise-v1",
+      "citationKey": "title24-part6-2022"
     },
     {
       "corpusId": "cbc-structural-fire-2022",
-      "name": "California Building Code 2022 Structural and Fire",
-      "description": "California Building Code structural and fire safety sections for high-rise buildings."
+      "authority": "primary",
+      "title": "California Building Code 2022 Structural and Fire",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-highrise-v1",
+      "citationKey": "cbc-structural-fire-2022"
     },
     {
       "corpusId": "hers-reference-materials",
-      "name": "HERS Reference Materials",
-      "description": "California Home Energy Rating System references used in building energy compliance workflows."
+      "authority": "secondary",
+      "title": "HERS Reference Materials",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-highrise-v1",
+      "citationKey": "hers-reference-materials"
     },
     {
-      "corpusId": "seismic-references-structural",
-      "name": "California Seismic Structural References",
-      "description": "Governing structural and seismic references applicable to high-rise buildings."
+      "corpusId": "seismic-reference",
+      "authority": "reference",
+      "title": "California Seismic Hazard Maps",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-highrise-v1",
+      "citationKey": "seismic-reference"
     }
   ],
   "classMap": [
     {
-      "ruleId": "cmr-compliance-cert",
+      "ruleId": "rule-01-01",
       "docClass": "COMPLIANCE_CERT",
-      "matchCriteria": "compliance certificate OR cert form",
+      "matchCriteria": "compliance",
       "confidence": 0.9,
       "priority": 1
     },
     {
-      "ruleId": "cmr-design-plans",
+      "ruleId": "rule-01-02",
+      "docClass": "COMPLIANCE_CERT",
+      "matchCriteria": "certificate",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "rule-01-03",
+      "docClass": "COMPLIANCE_CERT",
+      "matchCriteria": "cert",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "rule-02-01",
       "docClass": "DESIGN_PLANS",
-      "matchCriteria": "drawing set OR floor plan OR elevation",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "plan",
+      "confidence": 0.9,
+      "priority": 2
     },
     {
-      "ruleId": "cmr-spec-sheet",
+      "ruleId": "rule-02-02",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "drawing",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-02-03",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "sheet",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-02-04",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "design",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-03-01",
       "docClass": "SPEC_SHEET",
-      "matchCriteria": "specification sheet OR spec sheet",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "spec",
+      "confidence": 0.9,
+      "priority": 3
     },
     {
-      "ruleId": "cmr-test-report",
+      "ruleId": "rule-03-02",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "specification",
+      "confidence": 0.9,
+      "priority": 3
+    },
+    {
+      "ruleId": "rule-03-03",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "product",
+      "confidence": 0.9,
+      "priority": 3
+    },
+    {
+      "ruleId": "rule-04-01",
       "docClass": "TEST_REPORT",
-      "matchCriteria": "test report OR laboratory report",
+      "matchCriteria": "test",
       "confidence": 0.9,
-      "priority": 1
+      "priority": 4
     },
     {
-      "ruleId": "cmr-eng-letter",
+      "ruleId": "rule-04-02",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "report",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-04-03",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "lab",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-04-04",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "result",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-05-01",
       "docClass": "ENG_LETTER",
-      "matchCriteria": "engineering letter OR engineer letterhead",
+      "matchCriteria": "engineer",
       "confidence": 0.9,
-      "priority": 1
+      "priority": 5
     },
     {
-      "ruleId": "cmr-std-reference",
+      "ruleId": "rule-05-02",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "letter",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-03",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "eng_letter",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-04",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "engineering",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-06-01",
       "docClass": "STD_REFERENCE",
-      "matchCriteria": "code section OR standard reference OR CBC OR Title 24 citation",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "standard",
+      "confidence": 0.9,
+      "priority": 6
     },
     {
-      "ruleId": "cmr-mfr-submittal",
+      "ruleId": "rule-06-02",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "code",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-03",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "title24",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-04",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "cbc",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-07-01",
       "docClass": "MFR_SUBMITTAL",
-      "matchCriteria": "manufacturer submittal OR product data submittal",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "submittal",
+      "confidence": 0.9,
+      "priority": 7
     },
     {
-      "ruleId": "cmr-field-annotation",
+      "ruleId": "rule-07-02",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "manufacturer",
+      "confidence": 0.9,
+      "priority": 7
+    },
+    {
+      "ruleId": "rule-07-03",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "mfr",
+      "confidence": 0.9,
+      "priority": 7
+    },
+    {
+      "ruleId": "rule-08-01",
       "docClass": "FIELD_ANNOTATION",
-      "matchCriteria": "clouded note OR field note OR as-built annotation",
-      "confidence": 0.8,
-      "priority": 1
+      "matchCriteria": "annotation",
+      "confidence": 0.9,
+      "priority": 8
+    },
+    {
+      "ruleId": "rule-08-02",
+      "docClass": "FIELD_ANNOTATION",
+      "matchCriteria": "field",
+      "confidence": 0.9,
+      "priority": 8
+    },
+    {
+      "ruleId": "rule-08-03",
+      "docClass": "FIELD_ANNOTATION",
+      "matchCriteria": "note",
+      "confidence": 0.9,
+      "priority": 8
+    },
+    {
+      "ruleId": "rule-08-04",
+      "docClass": "FIELD_ANNOTATION",
+      "matchCriteria": "markup",
+      "confidence": 0.9,
+      "priority": 8
     }
   ],
   "hierarchyConfig": [
     {
-      "hierarchyId": "hier-eng-letter-over-mfr-submittal",
-      "description": "Engineering letters take precedence over manufacturer submittals for binding interpretation.",
+      "hierarchyId": "hier-001",
+      "description": "ENG_LETTER higher than MFR_SUBMITTAL",
       "higher": "ENG_LETTER",
       "lower": "MFR_SUBMITTAL"
     },
     {
-      "hierarchyId": "hier-test-report-over-spec-sheet",
-      "description": "Test reports take precedence over specification sheets for proven performance values.",
+      "hierarchyId": "hier-002",
+      "description": "TEST_REPORT higher than SPEC_SHEET",
       "higher": "TEST_REPORT",
       "lower": "SPEC_SHEET"
     }
   ],
   "contradictionPatterns": [
     {
-      "patternId": "cp-plan-vs-test",
-      "description": "Plan detail vs test report condition mismatch.",
-      "sourceAClass": "DESIGN_PLANS",
-      "sourceBClass": "TEST_REPORT",
-      "comparisonType": "parametermatch"
+      "patternId": "contra-001",
+      "description": "Plan detail vs test report condition",
+      "docClasses": ["DESIGN_PLANS", "TEST_REPORT"],
+      "parameterKeys": ["assembly_condition", "fire_rating"],
+      "severityDefault": "high"
     },
     {
-      "patternId": "cp-eng-letter-vs-evidence",
-      "description": "Engineering letter wording not supported by underlying evidence.",
-      "sourceAClass": "ENG_LETTER",
-      "sourceBClass": "TEST_REPORT",
-      "comparisonType": "wordingcheck"
+      "patternId": "contra-002",
+      "description": "Engineering letter vs evidence support",
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["standard_version", "certification_condition"],
+      "severityDefault": "high"
     },
     {
-      "patternId": "cp-cert-field-vs-plan",
-      "description": "Compliance certificate field inconsistent with plan or specification statement.",
-      "sourceAClass": "COMPLIANCE_CERT",
-      "sourceBClass": "DESIGN_PLANS",
-      "comparisonType": "parametermatch"
+      "patternId": "contra-003",
+      "description": "Cert field vs plan statement",
+      "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
+      "parameterKeys": ["equipment_model", "assembly_condition"],
+      "severityDefault": "medium"
     }
   ],
   "optionalExtractors": [
     {
-      "extractorId": "ext-seismic-notation",
-      "description": "Extractor hint for seismic design notes and references.",
-      "targetDocClass": "DESIGN_PLANS"
+      "hintId": "ext-001",
+      "appliesTo": ["DESIGN_PLANS"],
+      "hintType": "section_marker",
+      "pattern": "SHEET",
+      "note": "Detect drawing sheets"
     },
     {
-      "extractorId": "ext-hers-forms",
-      "description": "Extractor hint for HERS forms and related energy compliance documents.",
-      "targetDocClass": "COMPLIANCE_CERT"
+      "hintId": "ext-002",
+      "appliesTo": ["TEST_REPORT"],
+      "hintType": "table_extractor",
+      "pattern": "RESULT",
+      "note": "Extract test result tables"
     }
   ],
-  "standardVersionPolicy": [
-    {
-      "standardId": "title24-part6",
-      "name": "California Title 24 Part 6",
-      "allowedVersions": [
-        "2022"
-      ],
-      "currentVersion": "2022"
-    },
-    {
-      "standardId": "cbc-structural-fire",
-      "name": "California Building Code Structural and Fire",
-      "allowedVersions": [
-        "2022"
-      ],
-      "currentVersion": "2022"
-    }
-  ]
+  "standardVersionPolicy": {
+    "entries": [
+      {
+        "standardId": "title24-part6",
+        "citationKey": "T24P6-2022",
+        "currentAdoptedVersion": "2022",
+        "allowedVersions": ["2022", "2019"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "cbc",
+        "citationKey": "CBC-2022",
+        "currentAdoptedVersion": "2022",
+        "allowedVersions": ["2022"],
+        "staleBehavior": "STALE_finding"
+      }
+    ]
+  }
 }

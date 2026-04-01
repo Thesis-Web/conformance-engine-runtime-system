@@ -14,141 +14,305 @@
   "corpus": [
     {
       "corpusId": "ashrae-thermal-guidance-2021",
-      "name": "ASHRAE Thermal Guidelines for Data Processing Environments 2021",
-      "description": "ASHRAE thermal guidance and environmental class references for data centers."
+      "authority": "primary",
+      "title": "ASHRAE Thermal Guidelines 2021",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-datacenter-v3",
+      "citationKey": "ashrae-thermal-guidance-2021"
     },
     {
       "corpusId": "nfpa-75-2023",
-      "name": "NFPA 75 2023",
-      "description": "NFPA 75 standard for the fire protection of information technology equipment."
+      "authority": "primary",
+      "title": "NFPA 75 2023",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-datacenter-v3",
+      "citationKey": "nfpa-75-2023"
     },
     {
       "corpusId": "nfpa-76-2020",
-      "name": "NFPA 76 2020",
-      "description": "NFPA 76 standard for the fire protection of telecommunications facilities."
+      "authority": "primary",
+      "title": "NFPA 76 2020",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-datacenter-v3",
+      "citationKey": "nfpa-76-2020"
     },
     {
-      "corpusId": "fm-global-data-center",
-      "name": "FM Global Data Center Equipment References",
-      "description": "FM Global or equivalent equipment protection references relevant to data centers."
+      "corpusId": "fm-global-dc",
+      "authority": "secondary",
+      "title": "FM Global Data Center Protection",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-datacenter-v3",
+      "citationKey": "fm-global-dc"
     },
     {
-      "corpusId": "ul-equipment-certification",
-      "name": "UL Equipment Certification References",
-      "description": "UL or equivalent equipment certification references applicable to selected equipment."
+      "corpusId": "ul-equipment-cert",
+      "authority": "secondary",
+      "title": "UL Equipment Certification References",
+      "versionLabel": "current",
+      "ownershipPackId": "pack-california-datacenter-v3",
+      "citationKey": "ul-equipment-cert"
     }
   ],
   "classMap": [
     {
-      "ruleId": "cmr3-spec-sheet",
+      "ruleId": "rule-01-01",
       "docClass": "SPEC_SHEET",
-      "matchCriteria": "IT equipment spec sheet OR server specification",
-      "confidence": 0.85,
+      "matchCriteria": "spec",
+      "confidence": 0.9,
       "priority": 1
     },
     {
-      "ruleId": "cmr3-test-report",
+      "ruleId": "rule-01-02",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "specification",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "rule-01-03",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "product",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "rule-01-04",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "equipment",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "rule-02-01",
       "docClass": "TEST_REPORT",
-      "matchCriteria": "environmental test report OR thermal test report",
+      "matchCriteria": "test",
       "confidence": 0.9,
-      "priority": 1
+      "priority": 2
     },
     {
-      "ruleId": "cmr3-mfr-submittal",
+      "ruleId": "rule-02-02",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "report",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-02-03",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "lab",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-02-04",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "ul",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-02-05",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "fm",
+      "confidence": 0.9,
+      "priority": 2
+    },
+    {
+      "ruleId": "rule-03-01",
       "docClass": "MFR_SUBMITTAL",
-      "matchCriteria": "data center equipment submittal OR cut sheet package",
-      "confidence": 0.85,
-      "priority": 1
-    },
-    {
-      "ruleId": "cmr3-eng-letter",
-      "docClass": "ENG_LETTER",
-      "matchCriteria": "cooling or fire engineering letter OR engineer memorandum",
+      "matchCriteria": "submittal",
       "confidence": 0.9,
-      "priority": 1
+      "priority": 3
     },
     {
-      "ruleId": "cmr3-design-plans",
+      "ruleId": "rule-03-02",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "manufacturer",
+      "confidence": 0.9,
+      "priority": 3
+    },
+    {
+      "ruleId": "rule-03-03",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "mfr",
+      "confidence": 0.9,
+      "priority": 3
+    },
+    {
+      "ruleId": "rule-04-01",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "engineer",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-04-02",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "letter",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-04-03",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "engineering",
+      "confidence": 0.9,
+      "priority": 4
+    },
+    {
+      "ruleId": "rule-05-01",
       "docClass": "DESIGN_PLANS",
-      "matchCriteria": "mechanical plan OR equipment schedule OR data hall layout",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "plan",
+      "confidence": 0.9,
+      "priority": 5
     },
     {
-      "ruleId": "cmr3-std-reference",
+      "ruleId": "rule-05-02",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "design",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-03",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "layout",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-04",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "schedule",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-05",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "datacenter",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-05-06",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "data_center",
+      "confidence": 0.9,
+      "priority": 5
+    },
+    {
+      "ruleId": "rule-06-01",
       "docClass": "STD_REFERENCE",
-      "matchCriteria": "ASHRAE OR NFPA 75 OR NFPA 76 OR FM Global OR UL citation",
-      "confidence": 0.85,
-      "priority": 1
+      "matchCriteria": "standard",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-02",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "ashrae",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-03",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "nfpa",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-04",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "fm",
+      "confidence": 0.9,
+      "priority": 6
+    },
+    {
+      "ruleId": "rule-06-05",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "ul",
+      "confidence": 0.9,
+      "priority": 6
     }
   ],
   "hierarchyConfig": [
     {
-      "hierarchyId": "hier3-test-over-spec",
-      "description": "Environmental test reports have precedence over specification sheets for operating limits.",
+      "hierarchyId": "hier-001",
+      "description": "ENG_LETTER higher than MFR_SUBMITTAL",
+      "higher": "ENG_LETTER",
+      "lower": "MFR_SUBMITTAL"
+    },
+    {
+      "hierarchyId": "hier-002",
+      "description": "TEST_REPORT higher than SPEC_SHEET",
       "higher": "TEST_REPORT",
       "lower": "SPEC_SHEET"
     }
   ],
   "contradictionPatterns": [
     {
-      "patternId": "cp3-cooling-load-vs-equipment",
-      "description": "Cooling load specification vs equipment rating or tested limits.",
-      "sourceAClass": "DESIGN_PLANS",
-      "sourceBClass": "SPEC_SHEET",
-      "comparisonType": "parametermatch"
+      "patternId": "contra-001",
+      "description": "Cooling load spec vs equipment limits",
+      "docClasses": ["DESIGN_PLANS", "SPEC_SHEET"],
+      "parameterKeys": ["cooling_class", "equipment_model"],
+      "severityDefault": "high"
     },
     {
-      "patternId": "cp3-ashrae-class-vs-conditions",
-      "description": "ASHRAE environmental class designation vs stated or tested operating conditions.",
-      "sourceAClass": "STD_REFERENCE",
-      "sourceBClass": "TEST_REPORT",
-      "comparisonType": "parametermatch"
+      "patternId": "contra-002",
+      "description": "ASHRAE class vs operating conditions",
+      "docClasses": ["STD_REFERENCE", "SPEC_SHEET"],
+      "parameterKeys": ["cooling_class", "assembly_condition"],
+      "severityDefault": "high"
     },
     {
-      "patternId": "cp3-nfpa-vs-installed",
-      "description": "NFPA suppression or protection reference vs installed or specified system materials.",
-      "sourceAClass": "STD_REFERENCE",
-      "sourceBClass": "DESIGN_PLANS",
-      "comparisonType": "parametermatch"
+      "patternId": "contra-003",
+      "description": "NFPA suppression vs installed materials",
+      "docClasses": ["STD_REFERENCE", "DESIGN_PLANS"],
+      "parameterKeys": ["fire_rating", "certification_condition"],
+      "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
     {
-      "extractorId": "ext3-thermal-envelopes",
-      "description": "Extractor hint for thermal envelopes and allowable temperature ranges.",
-      "targetDocClass": "STD_REFERENCE"
+      "hintId": "ext-001",
+      "appliesTo": ["DESIGN_PLANS"],
+      "hintType": "section_marker",
+      "pattern": "SHEET",
+      "note": "Detect drawing sheets"
     },
     {
-      "extractorId": "ext3-schedule-capacity",
-      "description": "Extractor hint for equipment schedule capacities and loads.",
-      "targetDocClass": "DESIGN_PLANS"
+      "hintId": "ext-002",
+      "appliesTo": ["TEST_REPORT"],
+      "hintType": "table_extractor",
+      "pattern": "RESULT",
+      "note": "Extract test result tables"
     }
   ],
-  "standardVersionPolicy": [
-    {
-      "standardId": "ashrae-thermal-guidelines",
-      "name": "ASHRAE Thermal Guidelines for Data Processing Environments",
-      "allowedVersions": [
-        "2021"
-      ],
-      "currentVersion": "2021"
-    },
-    {
-      "standardId": "nfpa-75",
-      "name": "NFPA 75",
-      "allowedVersions": [
-        "2023"
-      ],
-      "currentVersion": "2023"
-    },
-    {
-      "standardId": "nfpa-76",
-      "name": "NFPA 76",
-      "allowedVersions": [
-        "2020"
-      ],
-      "currentVersion": "2020"
-    }
-  ]
+  "standardVersionPolicy": {
+    "entries": [
+      {
+        "standardId": "ashrae-thermal",
+        "citationKey": "ASHRAE-2021",
+        "currentAdoptedVersion": "2021",
+        "allowedVersions": ["2021"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "nfpa-75",
+        "citationKey": "NFPA75-2023",
+        "currentAdoptedVersion": "2023",
+        "allowedVersions": ["2023", "2020"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "nfpa-76",
+        "citationKey": "NFPA76-2020",
+        "currentAdoptedVersion": "2020",
+        "allowedVersions": ["2020"],
+        "staleBehavior": "STALE_finding"
+      }
+    ]
+  }
 }

@@ -3,15 +3,7 @@
   "$id": "cers:case-record",
   "type": "object",
   "title": "CaseRecord",
-  "required": [
-    "caseId",
-    "packId",
-    "title",
-    "createdAt",
-    "createdBy",
-    "actorMode",
-    "sourceRoot"
-  ],
+  "required": ["caseId", "packId", "title", "createdAt", "createdBy", "actorMode", "sourceRoot"],
   "additionalProperties": false,
   "properties": {
     "caseId": { "type": "string" },

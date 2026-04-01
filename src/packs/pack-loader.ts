@@ -1,15 +1,11 @@
 import type { PackManifest } from '../types/pack-manifest.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-
 export function loadPack(manifestPath: string): PackManifest {
-  if (!existsSync(resolve(manifestPath))) {
+  if (!existsSync(resolve(manifestPath)))
     throw new Error(`pack manifest not found: ${manifestPath}`);
-  }
-  const raw = readFileSync(resolve(manifestPath), 'utf8');
-  const manifest: unknown = JSON.parse(raw);
-
-  const requiredFields = [
+  const manifest = JSON.parse(readFileSync(resolve(manifestPath), 'utf8')) as unknown;
+  const required = [
     'packId',
     'versionIndex',
     'displayName',
@@ -20,18 +16,14 @@ export function loadPack(manifestPath: string): PackManifest {
     'contradictionPatterns',
     'optionalExtractors',
     'standardVersionPolicy',
-    'supportedDocumentClasses'
+    'supportedDocumentClasses',
   ] as const;
-
-  for (const field of requiredFields) {
-    if (!(manifest as any)[field]) {
+  for (const field of required) {
+    if (!(manifest as Record<string, unknown>)[field])
       throw new Error(`pack manifest missing required field: ${field}`);
-    }
   }
-
   return manifest as PackManifest;
 }
-
 export function packExists(manifestPath: string): boolean {
   return existsSync(resolve(manifestPath));
 }

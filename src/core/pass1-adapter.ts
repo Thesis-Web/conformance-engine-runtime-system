@@ -37,21 +37,21 @@ Use narrativeDescription that is clear and source-cited.`;
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
+      'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }]
-    })
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
   });
 
   if (!response.ok) {
     throw new Error(`Anthropic API error: ${response.status}`);
   }
 
-  const data = await response.json() as any;
+  const data = (await response.json()) as any;
   const text = data.content?.[0]?.text || '[]';
 
   try {
@@ -76,17 +76,17 @@ Use narrativeDescription that is clear and source-cited.`;
       resolutionPath: f.resolutionPath,
       askText: f.askText,
       tags: Array.isArray(f.tags) ? f.tags : [],
-      emittedBy: 'pass1'
+      emittedBy: 'pass1',
     }));
 
     return {
       proposedFindings,
-      extractionNotes: ['Pass1 completed via Claude Sonnet']
+      extractionNotes: ['Pass1 completed via Claude Sonnet'],
     };
   } catch (e) {
     return {
       proposedFindings: [],
-      extractionNotes: [`Parse error in Pass1: ${(e as Error).message}`]
+      extractionNotes: [`Parse error in Pass1: ${(e as Error).message}`],
     };
   }
 }

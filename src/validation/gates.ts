@@ -1,4 +1,4 @@
-import type { RunRecord, Finding } from '../types/index.js';
+import type { Finding, RunRecord } from '../types/index.js';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -13,7 +13,7 @@ export const FORBIDDEN_CERT_PHRASES: ReadonlyArray<string> = [
   'certified by engine',
   'passes authority review',
   'this system certifies',
-] as const;
+];
 
 export const REQUIRED_ARTIFACT_NAMES: ReadonlyArray<string> = [
   '01-ingest-log.json',
@@ -27,82 +27,45 @@ export const REQUIRED_ARTIFACT_NAMES: ReadonlyArray<string> = [
   '09-ask-list.json',
   '10-output-brief.md',
   '11-engineer-review-packet.md',
-] as const;
-
-function confidenceValues(finding: Finding): ReadonlyArray<number> {
-  return [
-    finding.extractionConfidence,
-    finding.classificationConfidence,
-    finding.contradictionConfidence,
-    finding.applicabilityConfidence,
-    finding.sourceAuthorityConfidence,
-  ];
-}
+];
 
 export function noCertificationLanguageGate(text: string): GateResult {
-  const normalized = text.toLowerCase();
-  const errors = FORBIDDEN_CERT_PHRASES.filter((phrase) =>
-    normalized.includes(phrase),
-  ).map((phrase) => `forbidden certification phrase found: ${phrase}`);
-
-  return {
-    passed: errors.length === 0,
-    gateName: 'no-certification-language',
-    errors,
-  };
+  const lower = text.toLowerCase();
+  const errors = FORBIDDEN_CERT_PHRASES.filter((p) => lower.includes(p)).map(
+    (p) => `forbidden phrase detected: "${p}"`,
+  );
+  return { passed: errors.length === 0, gateName: 'no-certification-language', errors };
 }
 
 export function confidenceRangeGate(findings: Finding[]): GateResult {
   const errors: string[] = [];
-
-  for (const finding of findings) {
-    const values = confidenceValues(finding);
-
-    for (const value of values) {
-      if (value < 0 || value > 1) {
-        errors.push(
-          `finding ${finding.findingId} has confidence value outside [0,1]: ${String(value)}`,
-        );
-      }
+  for (const f of findings) {
+    const dims: [string, number][] = [
+      ['extractionConfidence', f.extractionConfidence],
+      ['classificationConfidence', f.classificationConfidence],
+      ['contradictionConfidence', f.contradictionConfidence],
+      ['applicabilityConfidence', f.applicabilityConfidence],
+      ['sourceAuthorityConfidence', f.sourceAuthorityConfidence],
+    ];
+    for (const [name, val] of dims) {
+      if (val < 0 || val > 1) errors.push(`${f.findingId} ${name}=${val} out of [0,1]`);
     }
   }
-
-  return {
-    passed: errors.length === 0,
-    gateName: 'confidence-range',
-    errors,
-  };
+  return { passed: errors.length === 0, gateName: 'confidence-range', errors };
 }
 
 export function noLane3AuthorityGate(
   findings: Finding[],
   laneMap: Map<string, string>,
 ): GateResult {
-  const errors: string[] = [];
-
-  for (const finding of findings) {
-    const sourceALane = laneMap.get(finding.sourceARefId);
-    if (sourceALane === 'live_candidate') {
-      errors.push(
-        `finding ${finding.findingId} references live_candidate in sourceARefId`,
-      );
-    }
-
-    if (finding.sourceBRefId !== undefined) {
-      const sourceBLane = laneMap.get(finding.sourceBRefId);
-      if (sourceBLane === 'live_candidate') {
-        errors.push(
-          `finding ${finding.findingId} references live_candidate in sourceBRefId`,
-        );
-      }
-    }
-  }
-
-  return {
-    passed: errors.length === 0,
-    gateName: 'no-lane3-authority',
-    errors,
-  };
+  const errors = findings
+    .filter(
+      (f) =>
+        laneMap.get(f.sourceARefId) === 'live_candidate' ||
+        (f.sourceBRefId !== undefined && laneMap.get(f.sourceBRefId) === 'live_candidate'),
+    )
+    .map((f) => `finding ${f.findingId} cites live_candidate source`);
+  return { passed: errors.length === 0, gateName: 'no-lane3-authority', errors };
 }
 
 export function artifactPresenceGate(
@@ -110,49 +73,23 @@ export function artifactPresenceGate(
   required: ReadonlyArray<string>,
 ): GateResult {
   const errors = required
-    .filter((filename) => !existsSync(join(artifactRoot, filename)))
-    .map((filename) => `missing required artifact: ${filename}`);
-
-  return {
-    passed: errors.length === 0,
-    gateName: 'artifact-presence',
-    errors,
-  };
+    .filter((n) => !existsSync(join(artifactRoot, n)))
+    .map((n) => `missing artifact: ${n}`);
+  return { passed: errors.length === 0, gateName: 'artifact-presence', errors };
 }
 
 export function artifactFilenameGate(artifactRoot: string): GateResult {
-  const files = readdirSync(artifactRoot);
-  const candidatePattern = /^(0[0-9]|1[0-5])-[A-Za-z0-9-]+\.(json|md)$/;
-  const allowedNames = new Set<string>([
-    ...REQUIRED_ARTIFACT_NAMES,
-    '00-failure-log.json',
-    '12-operator-prompt.json',
-    '13-pass1-raw-findings.json',
-    '14-pass2-audit-findings.json',
-    '15-validation-report.json',
-  ]);
-
-  const errors = files
-    .filter((file) => /^(0[0-9]|1[0-5])-/.test(file))
-    .flatMap((file) => {
-      const fileErrors: string[] = [];
-
-      if (!candidatePattern.test(file)) {
-        fileErrors.push(`artifact filename does not match required pattern: ${file}`);
-      }
-
-      if (!allowedNames.has(file)) {
-        fileErrors.push(`artifact filename not allowed by spec: ${file}`);
-      }
-
-      return fileErrors;
-    });
-
-  return {
-    passed: errors.length === 0,
-    gateName: 'artifact-filename',
-    errors,
-  };
+  const errors: string[] = [];
+  try {
+    const files = readdirSync(artifactRoot);
+    const numbered = files.filter((f) => /^\d{2}-/.test(f));
+    for (const f of numbered) {
+      if (!REQUIRED_ARTIFACT_NAMES.includes(f)) errors.push(`unexpected artifact: ${f}`);
+    }
+  } catch {
+    errors.push(`cannot read artifactRoot: ${artifactRoot}`);
+  }
+  return { passed: errors.length === 0, gateName: 'artifact-filename', errors };
 }
 
 export function runAllGates(

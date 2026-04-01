@@ -58,7 +58,12 @@ export function ingestFile(input: IngestInput): IngestOutput {
 
   if (byteCount > MAX_FILE_BYTES) {
     return {
-      file: { ...base, sha256: '', contentAccepted: false, rejectionReason: 'exceeds MAX_FILE_BYTES' },
+      file: {
+        ...base,
+        sha256: '',
+        contentAccepted: false,
+        rejectionReason: 'exceeds MAX_FILE_BYTES',
+      },
       rejectionReason: 'exceeds MAX_FILE_BYTES',
     };
   }
@@ -75,8 +80,6 @@ export function ingestFile(input: IngestInput): IngestOutput {
 }
 
 export function validateCaseSize(files: IngestedFile[]): boolean {
-  const total = files
-    .filter((f) => f.contentAccepted)
-    .reduce((sum, f) => sum + f.byteCount, 0);
+  const total = files.filter((f) => f.contentAccepted).reduce((sum, f) => sum + f.byteCount, 0);
   return total <= MAX_CASE_BYTES;
 }
