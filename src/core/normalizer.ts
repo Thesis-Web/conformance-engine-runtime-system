@@ -26,6 +26,7 @@ export function normalizeText(raw: string): string {
 }
 
 export function buildChunkId(fileId: string, chunkOrdinal: number): string {
-  const input = `${fileId}:${chunkOrdinal}`;
-  return createHash('sha256').update(input).digest('hex');
+  return createHash('sha256')
+    .update(`${fileId}:${chunkOrdinal}`)
+    .digest('hex');
 }

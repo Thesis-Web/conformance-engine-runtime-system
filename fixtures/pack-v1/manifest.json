@@ -1,0 +1,163 @@
+{
+  "packId": "pack-california-highrise-v1",
+  "versionIndex": "1.0.0",
+  "displayName": "California High-rise / Buildings Pack v1",
+  "jurisdiction": "California",
+  "supportedDocumentClasses": [
+    "COMPLIANCE_CERT",
+    "DESIGN_PLANS",
+    "SPEC_SHEET",
+    "TEST_REPORT",
+    "ENG_LETTER",
+    "STD_REFERENCE",
+    "MFR_SUBMITTAL",
+    "FIELD_ANNOTATION"
+  ],
+  "corpus": [
+    {
+      "corpusId": "title24-part6-2022",
+      "name": "California Title 24 Part 6 Energy Code 2022",
+      "description": "California Title 24 Part 6 energy efficiency standards relevant to high-rise building cases."
+    },
+    {
+      "corpusId": "cbc-structural-fire-2022",
+      "name": "California Building Code 2022 Structural and Fire",
+      "description": "California Building Code structural and fire safety sections for high-rise buildings."
+    },
+    {
+      "corpusId": "hers-reference-materials",
+      "name": "HERS Reference Materials",
+      "description": "California Home Energy Rating System references used in building energy compliance workflows."
+    },
+    {
+      "corpusId": "seismic-references-structural",
+      "name": "California Seismic Structural References",
+      "description": "Governing structural and seismic references applicable to high-rise buildings."
+    }
+  ],
+  "classMap": [
+    {
+      "ruleId": "cmr-compliance-cert",
+      "docClass": "COMPLIANCE_CERT",
+      "matchCriteria": "compliance certificate OR cert form",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-design-plans",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "drawing set OR floor plan OR elevation",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-spec-sheet",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "specification sheet OR spec sheet",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-test-report",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "test report OR laboratory report",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-eng-letter",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "engineering letter OR engineer letterhead",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-std-reference",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "code section OR standard reference OR CBC OR Title 24 citation",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-mfr-submittal",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "manufacturer submittal OR product data submittal",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr-field-annotation",
+      "docClass": "FIELD_ANNOTATION",
+      "matchCriteria": "clouded note OR field note OR as-built annotation",
+      "confidence": 0.8,
+      "priority": 1
+    }
+  ],
+  "hierarchyConfig": [
+    {
+      "hierarchyId": "hier-eng-letter-over-mfr-submittal",
+      "description": "Engineering letters take precedence over manufacturer submittals for binding interpretation.",
+      "higher": "ENG_LETTER",
+      "lower": "MFR_SUBMITTAL"
+    },
+    {
+      "hierarchyId": "hier-test-report-over-spec-sheet",
+      "description": "Test reports take precedence over specification sheets for proven performance values.",
+      "higher": "TEST_REPORT",
+      "lower": "SPEC_SHEET"
+    }
+  ],
+  "contradictionPatterns": [
+    {
+      "patternId": "cp-plan-vs-test",
+      "description": "Plan detail vs test report condition mismatch.",
+      "sourceAClass": "DESIGN_PLANS",
+      "sourceBClass": "TEST_REPORT",
+      "comparisonType": "parametermatch"
+    },
+    {
+      "patternId": "cp-eng-letter-vs-evidence",
+      "description": "Engineering letter wording not supported by underlying evidence.",
+      "sourceAClass": "ENG_LETTER",
+      "sourceBClass": "TEST_REPORT",
+      "comparisonType": "wordingcheck"
+    },
+    {
+      "patternId": "cp-cert-field-vs-plan",
+      "description": "Compliance certificate field inconsistent with plan or specification statement.",
+      "sourceAClass": "COMPLIANCE_CERT",
+      "sourceBClass": "DESIGN_PLANS",
+      "comparisonType": "parametermatch"
+    }
+  ],
+  "optionalExtractors": [
+    {
+      "extractorId": "ext-seismic-notation",
+      "description": "Extractor hint for seismic design notes and references.",
+      "targetDocClass": "DESIGN_PLANS"
+    },
+    {
+      "extractorId": "ext-hers-forms",
+      "description": "Extractor hint for HERS forms and related energy compliance documents.",
+      "targetDocClass": "COMPLIANCE_CERT"
+    }
+  ],
+  "standardVersionPolicy": [
+    {
+      "standardId": "title24-part6",
+      "name": "California Title 24 Part 6",
+      "allowedVersions": [
+        "2022"
+      ],
+      "currentVersion": "2022"
+    },
+    {
+      "standardId": "cbc-structural-fire",
+      "name": "California Building Code Structural and Fire",
+      "allowedVersions": [
+        "2022"
+      ],
+      "currentVersion": "2022"
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 
 import { hashFile, MAX_FILE_BYTES, MAX_CASE_BYTES, isBlockedExtension } from './hasher.js';
-import type { IngestedFile, SourceLane } from '../types/index.js';
+import type { IngestedFile } from '../types/index.js';
+import type { SourceLane } from '../types/index.js';
 
 export interface IngestInput {
   caseId: string;
@@ -17,82 +18,32 @@ export interface IngestOutput {
   rejectionReason?: string;
 }
 
-function detectMimeType(extension: string): string {
-  switch (extension) {
-    case '.pdf':
-      return 'application/pdf';
-    case '.docx':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case '.json':
-      return 'application/json';
-    case '.txt':
-      return 'text/plain';
-    case '.csv':
-      return 'text/csv';
-    default:
-      return 'application/octet-stream';
-  }
+const MIME_MAP: Readonly<Record<string, string>> = {
+  '.pdf': 'application/pdf',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.json': 'application/json',
+  '.txt': 'text/plain',
+  '.csv': 'text/csv',
+};
+
+function detectMimeType(ext: string): string {
+  return MIME_MAP[ext] ?? 'application/octet-stream';
+}
+
+function baseFilename(filePath: string): string {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
 }
 
 export function ingestFile(input: IngestInput): IngestOutput {
-  const stats = statSync(input.filePath);
   const bytes = readFileSync(input.filePath);
   const byteCount = bytes.byteLength;
   const extensionObserved = extname(input.filePath).toLowerCase();
   const mimeTypeDetected = detectMimeType(extensionObserved);
   const ingestedAt = new Date().toISOString();
+  const originalFilename = baseFilename(input.filePath);
   const storedPath = input.filePath;
-  const originalFilename = input.filePath.split(/[\\/]/).pop() ?? input.filePath;
 
-  if (byteCount > MAX_FILE_BYTES) {
-    const file: IngestedFile = {
-      fileId: randomUUID(),
-      caseId: input.caseId,
-      runId: input.runId,
-      originalFilename,
-      storedPath,
-      mimeTypeDetected,
-      extensionObserved,
-      sha256: '',
-      byteCount,
-      sourceLane: input.sourceLane,
-      contentAccepted: false,
-      rejectionReason: 'exceeds MAX_FILE_BYTES',
-      ingestedAt,
-    };
-
-    return {
-      file,
-      rejectionReason: 'exceeds MAX_FILE_BYTES',
-    };
-  }
-
-  if (isBlockedExtension(extensionObserved)) {
-    const file: IngestedFile = {
-      fileId: randomUUID(),
-      caseId: input.caseId,
-      runId: input.runId,
-      originalFilename,
-      storedPath,
-      mimeTypeDetected,
-      extensionObserved,
-      sha256: '',
-      byteCount,
-      sourceLane: input.sourceLane,
-      contentAccepted: false,
-      rejectionReason: 'blocked extension',
-      ingestedAt,
-    };
-
-    return {
-      file,
-      rejectionReason: 'blocked extension',
-    };
-  }
-
-  const sha256 = hashFile(bytes);
-
-  const file: IngestedFile = {
+  const base: Omit<IngestedFile, 'sha256' | 'contentAccepted'> = {
     fileId: randomUUID(),
     caseId: input.caseId,
     runId: input.runId,
@@ -100,24 +51,32 @@ export function ingestFile(input: IngestInput): IngestOutput {
     storedPath,
     mimeTypeDetected,
     extensionObserved,
-    sha256,
-    byteCount: stats.size,
+    byteCount,
     sourceLane: input.sourceLane,
-    contentAccepted: true,
     ingestedAt,
   };
 
-  return { file };
+  if (byteCount > MAX_FILE_BYTES) {
+    return {
+      file: { ...base, sha256: '', contentAccepted: false, rejectionReason: 'exceeds MAX_FILE_BYTES' },
+      rejectionReason: 'exceeds MAX_FILE_BYTES',
+    };
+  }
+
+  if (isBlockedExtension(extensionObserved)) {
+    return {
+      file: { ...base, sha256: '', contentAccepted: false, rejectionReason: 'blocked extension' },
+      rejectionReason: 'blocked extension',
+    };
+  }
+
+  const sha256 = hashFile(bytes);
+  return { file: { ...base, sha256, contentAccepted: true } };
 }
 
 export function validateCaseSize(files: IngestedFile[]): boolean {
-  let totalBytes = 0;
-
-  for (const file of files) {
-    if (file.contentAccepted) {
-      totalBytes += file.byteCount;
-    }
-  }
-
-  return totalBytes <= MAX_CASE_BYTES;
+  const total = files
+    .filter((f) => f.contentAccepted)
+    .reduce((sum, f) => sum + f.byteCount, 0);
+  return total <= MAX_CASE_BYTES;
 }

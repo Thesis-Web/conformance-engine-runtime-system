@@ -1,0 +1,133 @@
+{
+  "packId": "pack-california-appliance-refrig-v2",
+  "versionIndex": "1.0.0",
+  "displayName": "Appliance / Refrigeration Pack v2",
+  "jurisdiction": "California",
+  "supportedDocumentClasses": [
+    "SPEC_SHEET",
+    "TEST_REPORT",
+    "MFR_SUBMITTAL",
+    "STD_REFERENCE",
+    "ENG_LETTER"
+  ],
+  "corpus": [
+    {
+      "corpusId": "title20-appliance-efficiency",
+      "name": "California Title 20 Appliance Efficiency Regulations",
+      "description": "California Title 20 appliance efficiency regulations for covered product classes."
+    },
+    {
+      "corpusId": "cec-maedbs",
+      "name": "CEC MAEDbS Public Certification Records",
+      "description": "California Energy Commission MAEDbS public certification database."
+    },
+    {
+      "corpusId": "doe-test-procedures",
+      "name": "DOE Appliance Test Procedures",
+      "description": "Governing DOE test procedure references for selected appliance classes."
+    },
+    {
+      "corpusId": "ahri-directory",
+      "name": "AHRI Certified Product Performance Directory",
+      "description": "AHRI public directory references where applicable."
+    }
+  ],
+  "classMap": [
+    {
+      "ruleId": "cmr2-spec-sheet",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "product specification sheet OR performance table",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr2-test-report",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "lab test report OR rating test report",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr2-mfr-submittal",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "manufacturer certification submittal OR application form",
+      "confidence": 0.9,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr2-std-reference",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "Title 20 OR MAEDbS OR DOE procedure citation",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "cmr2-eng-letter",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "engineering interpretation letter OR consultant letter",
+      "confidence": 0.85,
+      "priority": 1
+    }
+  ],
+  "hierarchyConfig": [
+    {
+      "hierarchyId": "hier2-test-over-spec",
+      "description": "Test reports have precedence over specification sheets for certified ratings.",
+      "higher": "TEST_REPORT",
+      "lower": "SPEC_SHEET"
+    }
+  ],
+  "contradictionPatterns": [
+    {
+      "patternId": "cp2-submittal-vs-tested",
+      "description": "Manufacturer submittal values vs tested condition values.",
+      "sourceAClass": "MFR_SUBMITTAL",
+      "sourceBClass": "TEST_REPORT",
+      "comparisonType": "parametermatch"
+    },
+    {
+      "patternId": "cp2-test-vs-maedbs",
+      "description": "Test report conditions vs MAEDbS filing claims.",
+      "sourceAClass": "TEST_REPORT",
+      "sourceBClass": "STD_REFERENCE",
+      "comparisonType": "parametermatch"
+    },
+    {
+      "patternId": "cp2-procedure-version",
+      "description": "Cited procedure version vs current pack-governed DOE or Title 20 version.",
+      "sourceAClass": "STD_REFERENCE",
+      "sourceBClass": "MFR_SUBMITTAL",
+      "comparisonType": "versioncheck"
+    }
+  ],
+  "optionalExtractors": [
+    {
+      "extractorId": "ext2-rated-conditions",
+      "description": "Extractor hint for rated test conditions and duty cycles.",
+      "targetDocClass": "TEST_REPORT"
+    },
+    {
+      "extractorId": "ext2-maedbs-ids",
+      "description": "Extractor hint for MAEDbS IDs and certification references.",
+      "targetDocClass": "MFR_SUBMITTAL"
+    }
+  ],
+  "standardVersionPolicy": [
+    {
+      "standardId": "title20-appliance",
+      "name": "California Title 20 Appliance Efficiency",
+      "allowedVersions": [
+        "current"
+      ],
+      "currentVersion": "current"
+    },
+    {
+      "standardId": "doe-test-procedures",
+      "name": "DOE Appliance Test Procedures",
+      "allowedVersions": [
+        "current"
+      ],
+      "currentVersion": "current"
+    }
+  ]
+}

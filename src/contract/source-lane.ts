@@ -12,11 +12,8 @@ export function higherAuthority(a: SourceLane, b: SourceLane): SourceLane {
 
 export function canEmitFindings(lane: SourceLane): boolean {
   switch (lane) {
-    case 'case_bound':
-      return true;
-    case 'curated_reference':
-      return true;
-    case 'live_candidate':
-      return false;
+    case 'case_bound': return true;
+    case 'curated_reference': return true;
+    case 'live_candidate': return false;
   }
 }
