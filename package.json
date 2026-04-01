@@ -1,0 +1,31 @@
+{
+  "name": "conformance-engine-runtime-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CERS deterministic engine-first runtime scaffold",
+  "license": "UNLICENSED",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "build": "tsc -p tsconfig.json",
+    "schema:validate": "node -e \"console.log('schema validation placeholder')\"",
+    "artifact:validate": "node -e \"console.log('artifact validation placeholder')\"",
+    "pack:validate": "node -e \"console.log('pack validation placeholder')\"",
+    "replay:smoke": "node -e \"console.log('deterministic replay placeholder')\"",
+    "run:poc": "node -e \"console.log('run:poc placeholder')\"",
+    "run:validate": "node -e \"console.log('run:validate placeholder')\"",
+    "ci:gate": "npm run lint && npm run typecheck && npm run test && npm run test:integration && npm run schema:validate && npm run artifact:validate && npm run pack:validate && npm run replay:smoke"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}

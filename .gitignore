@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+build/
+coverage/
+.tmp/
+.cache/
+
+# runtime data
+runs/*
+!runs/.gitkeep
+
+# local env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor / os
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# test artifacts
+test-results/
+
+# generated schemas / artifacts
+*.tsbuildinfo
