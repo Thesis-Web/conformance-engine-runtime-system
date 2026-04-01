@@ -1,8 +1,9 @@
 import { parseArgs } from 'node:util';
 import { resolve, join } from 'node:path';
-import { createCase, saveCase, loadCase } from '../orchestration/case-manager.js';
+import { createCase, saveCase } from '../orchestration/case-manager.js';
 import { loadPack, packExists } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
+import { runCase } from '../orchestration/run-orchestrator.js';
 import type { PackId } from '../types/index.js';
 
 const VALID_PACK_IDS: ReadonlyArray<PackId> = [
@@ -13,7 +14,7 @@ const VALID_PACK_IDS: ReadonlyArray<PackId> = [
 
 const USAGE = `Usage:
   cers init-case   --pack <packId> --title <title> [--source-root <path>]
-  cers run-case    --case <casePath> --pack <packId>
+  cers run-case    --case <casePath> --pack <packManifestPath>
   cers validate-pack --manifest <path>
   cers validate-run  --run <runDir>
   cers replay-run    --run <runDir>`;
@@ -45,12 +46,12 @@ export async function main(): Promise<void> {
         console.error(`unknown packId: ${packId}`);
         process.exit(1);
       }
-      const sourceRoot = args.values['source-root'] ?? './sources';
+      const sourceRoot = resolve(args.values['source-root'] ?? './sources');
       const newCase = createCase({
         packId: packId as PackId,
         title,
         createdBy: 'operator',
-        sourceRoot: resolve(sourceRoot),
+        sourceRoot,
       });
       const caseDir = join('./cases', newCase.caseId);
       saveCase(newCase, caseDir);
@@ -58,7 +59,28 @@ export async function main(): Promise<void> {
       break;
     }
     case 'run-case': {
-      console.log('run-case: stub — wiring pending pass adapters');
+      const casePath = args.values['case'];
+      const packManifestPath = args.values['pack'];
+      if (!casePath || !packManifestPath) {
+        console.error('run-case requires --case and --pack');
+        process.exit(1);
+      }
+      const result = await runCase({
+        casePath: resolve(casePath),
+        packManifestPath: resolve(packManifestPath),
+      });
+      console.log(
+        JSON.stringify(
+          {
+            runId: result.run.runId,
+            status: result.run.status,
+            artifactRoot: result.artifactRoot,
+            gates: result.gateResults.map((g) => ({ gate: g.gateName, passed: g.passed })),
+          },
+          null,
+          2,
+        ),
+      );
       break;
     }
     case 'validate-pack': {
@@ -74,11 +96,18 @@ export async function main(): Promise<void> {
       break;
     }
     case 'validate-run': {
-      console.log('validate-run: stub');
+      console.log('validate-run: stub — pending gate runner wiring');
       break;
     }
     case 'replay-run': {
-      console.log('replay-run: stub');
+      const { replayRun } = await import('./replay.js');
+      const runDir = args.values['run'];
+      if (!runDir) {
+        console.error('replay-run requires --run');
+        process.exit(1);
+      }
+      const result = replayRun(resolve(runDir));
+      console.log(JSON.stringify(result, null, 2));
       break;
     }
     default: {
