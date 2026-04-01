@@ -1,0 +1,260 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:pack-manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packId",
+    "versionIndex",
+    "displayName",
+    "jurisdiction",
+    "corpus",
+    "classMap",
+    "hierarchyConfig",
+    "contradictionPatterns",
+    "optionalExtractors",
+    "standardVersionPolicy",
+    "supportedDocumentClasses"
+  ],
+  "properties": {
+    "packId": {
+      "type": "string",
+      "enum": [
+        "pack-california-highrise-v1",
+        "pack-california-appliance-refrig-v2",
+        "pack-california-datacenter-v3"
+      ]
+    },
+    "versionIndex": { "type": "string" },
+    "displayName": { "type": "string" },
+    "jurisdiction": { "type": "string" },
+    "corpus": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "corpusId",
+          "authority",
+          "title",
+          "versionLabel",
+          "ownershipPackId",
+          "citationKey"
+        ],
+        "properties": {
+          "corpusId": { "type": "string" },
+          "authority": {
+            "type": "string",
+            "enum": ["primary", "secondary", "reference"]
+          },
+          "title": { "type": "string" },
+          "versionLabel": { "type": "string" },
+          "ownershipPackId": {
+            "type": "string",
+            "enum": [
+              "pack-california-highrise-v1",
+              "pack-california-appliance-refrig-v2",
+              "pack-california-datacenter-v3"
+            ]
+          },
+          "citationKey": { "type": "string" },
+          "localPath": { "type": "string" },
+          "externalReference": { "type": "string" }
+        }
+      }
+    },
+    "classMap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleId", "docClass", "matchCriteria", "confidence", "priority"],
+        "properties": {
+          "ruleId": { "type": "string" },
+          "docClass": {
+            "type": "string",
+            "enum": [
+              "COMPLIANCE_CERT",
+              "DESIGN_PLANS",
+              "SPEC_SHEET",
+              "TEST_REPORT",
+              "ENG_LETTER",
+              "STD_REFERENCE",
+              "MFR_SUBMITTAL",
+              "FIELD_ANNOTATION"
+            ]
+          },
+          "matchCriteria": { "type": "string" },
+          "confidence": { "type": "number" },
+          "priority": { "type": "number" }
+        }
+      }
+    },
+    "hierarchyConfig": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hierarchyId", "description", "higher", "lower"],
+        "properties": {
+          "hierarchyId": { "type": "string" },
+          "description": { "type": "string" },
+          "higher": {
+            "type": "string",
+            "enum": [
+              "COMPLIANCE_CERT",
+              "DESIGN_PLANS",
+              "SPEC_SHEET",
+              "TEST_REPORT",
+              "ENG_LETTER",
+              "STD_REFERENCE",
+              "MFR_SUBMITTAL",
+              "FIELD_ANNOTATION",
+              "source_lane"
+            ]
+          },
+          "lower": {
+            "type": "string",
+            "enum": [
+              "COMPLIANCE_CERT",
+              "DESIGN_PLANS",
+              "SPEC_SHEET",
+              "TEST_REPORT",
+              "ENG_LETTER",
+              "STD_REFERENCE",
+              "MFR_SUBMITTAL",
+              "FIELD_ANNOTATION",
+              "source_lane"
+            ]
+          },
+          "condition": { "type": "string" }
+        }
+      }
+    },
+    "contradictionPatterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["patternId", "description", "docClasses", "parameterKeys", "severityDefault"],
+        "properties": {
+          "patternId": { "type": "string" },
+          "description": { "type": "string" },
+          "docClasses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "COMPLIANCE_CERT",
+                "DESIGN_PLANS",
+                "SPEC_SHEET",
+                "TEST_REPORT",
+                "ENG_LETTER",
+                "STD_REFERENCE",
+                "MFR_SUBMITTAL",
+                "FIELD_ANNOTATION"
+              ]
+            }
+          },
+          "parameterKeys": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "severityDefault": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"]
+          }
+        }
+      }
+    },
+    "optionalExtractors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hintId", "appliesTo", "hintType"],
+        "properties": {
+          "hintId": { "type": "string" },
+          "appliesTo": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "COMPLIANCE_CERT",
+                "DESIGN_PLANS",
+                "SPEC_SHEET",
+                "TEST_REPORT",
+                "ENG_LETTER",
+                "STD_REFERENCE",
+                "MFR_SUBMITTAL",
+                "FIELD_ANNOTATION"
+              ]
+            }
+          },
+          "hintType": {
+            "type": "string",
+            "enum": [
+              "section_marker",
+              "table_extractor",
+              "header_pattern",
+              "field_locator",
+              "keyword_bias"
+            ]
+          },
+          "pattern": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "standardVersionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "standardId",
+              "citationKey",
+              "currentAdoptedVersion",
+              "allowedVersions",
+              "staleBehavior"
+            ],
+            "properties": {
+              "standardId": { "type": "string" },
+              "citationKey": { "type": "string" },
+              "currentAdoptedVersion": { "type": "string" },
+              "allowedVersions": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "staleBehavior": {
+                "type": "string",
+                "enum": ["STALE_finding", "reject", "warn"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "supportedDocumentClasses": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "COMPLIANCE_CERT",
+          "DESIGN_PLANS",
+          "SPEC_SHEET",
+          "TEST_REPORT",
+          "ENG_LETTER",
+          "STD_REFERENCE",
+          "MFR_SUBMITTAL",
+          "FIELD_ANNOTATION"
+        ]
+      }
+    }
+  }
+}

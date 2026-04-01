@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:engineer-review-packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["runId", "caseId", "content"],
+  "properties": {
+    "runId": { "type": "string" },
+    "caseId": { "type": "string" },
+    "content": { "type": "string" },
+    "generatedAt": { "type": "string" }
+  }
+}

@@ -14,10 +14,10 @@
     "test": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "build": "tsc -p tsconfig.json",
-    "schema:validate": "node -e \"console.log('schema validation placeholder')\"",
-    "artifact:validate": "node -e \"console.log('artifact validation placeholder')\"",
-    "pack:validate": "node -e \"console.log('pack validation placeholder')\"",
-    "replay:smoke": "node -e \"console.log('deterministic replay placeholder')\"",
+    "schema:validate": "npx tsx scripts/validate-schemas.ts",
+    "artifact:validate": "npx tsx scripts/validate-artifacts.ts",
+    "pack:validate": "npx tsx scripts/validate-packs.ts",
+    "replay:smoke": "npx tsx scripts/replay-smoke.ts",
     "run:poc": "node -e \"console.log('run:poc placeholder')\"",
     "run:validate": "node -e \"console.log('run:validate placeholder')\"",
     "ci:gate": "npm run lint && npm run typecheck && npm run test && npm run test:integration && npm run schema:validate && npm run artifact:validate && npm run pack:validate && npm run replay:smoke"
@@ -26,6 +26,7 @@
     "@types/node": "^22.13.10",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.8",
+    "zod": "^3.22.4"
   }
 }

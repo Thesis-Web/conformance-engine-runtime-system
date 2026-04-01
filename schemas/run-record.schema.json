@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:run-record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "caseId",
+    "packId",
+    "status",
+    "startedAt",
+    "engineVersion",
+    "blueprintVersion",
+    "specVersion",
+    "operatorMode",
+    "artifactRoot"
+  ],
+  "properties": {
+    "runId": { "type": "string" },
+    "caseId": { "type": "string" },
+    "packId": {
+      "type": "string",
+      "enum": [
+        "pack-california-highrise-v1",
+        "pack-california-appliance-refrig-v2",
+        "pack-california-datacenter-v3"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "ingesting",
+        "ingested",
+        "classified",
+        "compare_pairs_built",
+        "pass1_complete",
+        "pass2_complete",
+        "rules_complete",
+        "artifacts_built",
+        "validated",
+        "complete",
+        "failed"
+      ]
+    },
+    "startedAt": { "type": "string" },
+    "completedAt": { "type": "string" },
+    "engineVersion": { "type": "string" },
+    "blueprintVersion": { "type": "string" },
+    "specVersion": { "type": "string" },
+    "operatorMode": { "const": "manual_prompt_bridge" },
+    "artifactRoot": { "type": "string" },
+    "failureReason": { "type": "string" }
+  }
+}

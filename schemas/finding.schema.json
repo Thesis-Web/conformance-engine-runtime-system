@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "findingId",
+    "runId",
+    "packId",
+    "findingClass",
+    "severity",
+    "confidenceClass",
+    "confidenceBand",
+    "extractionConfidence",
+    "classificationConfidence",
+    "contradictionConfidence",
+    "applicabilityConfidence",
+    "sourceAuthorityConfidence",
+    "sourceARefId",
+    "escalationRequired",
+    "narrativeDescription",
+    "tags",
+    "emittedBy"
+  ],
+  "properties": {
+    "findingId": { "type": "string" },
+    "runId": { "type": "string" },
+    "packId": {
+      "type": "string",
+      "enum": [
+        "pack-california-highrise-v1",
+        "pack-california-appliance-refrig-v2",
+        "pack-california-datacenter-v3"
+      ]
+    },
+    "findingClass": {
+      "type": "string",
+      "enum": ["DIFF", "HOLE", "CONTRA", "AMBIGUITY", "UNSUPPORTED", "STALE", "ASK"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "confidenceClass": {
+      "type": "string",
+      "enum": ["deterministic", "interpretive"]
+    },
+    "confidenceBand": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "extractionConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "classificationConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "contradictionConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "applicabilityConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "sourceAuthorityConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "sourceARefId": { "type": "string" },
+    "sourceBRefId": { "type": "string" },
+    "escalationRequired": { "type": "boolean" },
+    "narrativeDescription": { "type": "string" },
+    "resolutionPath": { "type": "string" },
+    "askText": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "emittedBy": {
+      "type": "string",
+      "enum": ["pass1", "pass2", "rules", "merged"]
+    }
+  }
+}

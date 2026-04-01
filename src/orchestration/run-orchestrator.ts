@@ -206,7 +206,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     saveRun(run);
 
     const laneMap = new Map(ingestedFiles.map((f) => [f.fileId, f.sourceLane]));
-    const gateResults = runAllGates(run, allFindings, laneMap);
+    const gateResults = runAllGates(run, allFindings, laneMap, pack);
     transition(run.status, 'validated');
     run = updateRunStatus(run, 'validated');
     saveRun(run);

@@ -1,21 +1,10 @@
-import type { Finding, RunRecord } from '../types/index.js';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-export interface GateResult {
-  passed: boolean;
-  gateName: string;
-  errors: string[];
-}
+import type { Finding, RunRecord } from '../types/index.js';
+import type { PackManifest } from '../types/pack-manifest.js';
 
-export const FORBIDDEN_CERT_PHRASES: ReadonlyArray<string> = [
-  'approved',
-  'certified by engine',
-  'passes authority review',
-  'this system certifies',
-];
-
-export const REQUIRED_ARTIFACT_NAMES: ReadonlyArray<string> = [
+export const REQUIRED_ARTIFACT_NAMES = [
   '01-ingest-log.json',
   '02-provenance-ledger.json',
   '03-source-inventory.json',
@@ -27,81 +16,224 @@ export const REQUIRED_ARTIFACT_NAMES: ReadonlyArray<string> = [
   '09-ask-list.json',
   '10-output-brief.md',
   '11-engineer-review-packet.md',
-];
+] as const;
+
+export const FORBIDDEN_CERT_PHRASES = [
+  'approved',
+  'certified by engine',
+  'passes authority review',
+  'this system certifies',
+] as const;
+
+export interface GateResult {
+  gateName: string;
+  passed: boolean;
+  errors: string[];
+}
 
 export function noCertificationLanguageGate(text: string): GateResult {
   const lower = text.toLowerCase();
-  const errors = FORBIDDEN_CERT_PHRASES.filter((p) => lower.includes(p)).map(
-    (p) => `forbidden phrase detected: "${p}"`,
-  );
-  return { passed: errors.length === 0, gateName: 'no-certification-language', errors };
+  const errors = FORBIDDEN_CERT_PHRASES.filter((phrase) => lower.includes(phrase));
+
+  return {
+    gateName: 'no-certification-language',
+    passed: errors.length === 0,
+    errors,
+  };
 }
 
 export function confidenceRangeGate(findings: Finding[]): GateResult {
   const errors: string[] = [];
-  for (const f of findings) {
-    const dims: [string, number][] = [
-      ['extractionConfidence', f.extractionConfidence],
-      ['classificationConfidence', f.classificationConfidence],
-      ['contradictionConfidence', f.contradictionConfidence],
-      ['applicabilityConfidence', f.applicabilityConfidence],
-      ['sourceAuthorityConfidence', f.sourceAuthorityConfidence],
+
+  for (const finding of findings) {
+    const values = [
+      finding.extractionConfidence,
+      finding.classificationConfidence,
+      finding.contradictionConfidence,
+      finding.applicabilityConfidence,
+      finding.sourceAuthorityConfidence,
     ];
-    for (const [name, val] of dims) {
-      if (val < 0 || val > 1) errors.push(`${f.findingId} ${name}=${val} out of [0,1]`);
+
+    if (values.some((value) => value < 0 || value > 1)) {
+      errors.push(finding.findingId);
     }
   }
-  return { passed: errors.length === 0, gateName: 'confidence-range', errors };
+
+  return {
+    gateName: 'confidence-range',
+    passed: errors.length === 0,
+    errors,
+  };
 }
 
 export function noLane3AuthorityGate(
   findings: Finding[],
-  laneMap: Map<string, string>,
+  laneMap: ReadonlyMap<string, string>,
 ): GateResult {
-  const errors = findings
-    .filter(
-      (f) =>
-        laneMap.get(f.sourceARefId) === 'live_candidate' ||
-        (f.sourceBRefId !== undefined && laneMap.get(f.sourceBRefId) === 'live_candidate'),
-    )
-    .map((f) => `finding ${f.findingId} cites live_candidate source`);
-  return { passed: errors.length === 0, gateName: 'no-lane3-authority', errors };
+  const errors: string[] = [];
+
+  for (const finding of findings) {
+    const sourceALane = laneMap.get(finding.sourceARefId);
+    const sourceBLane = finding.sourceBRefId ? laneMap.get(finding.sourceBRefId) : undefined;
+
+    if (sourceALane === 'live_candidate' || sourceBLane === 'live_candidate') {
+      errors.push(finding.findingId);
+    }
+  }
+
+  return {
+    gateName: 'no-lane3-authority',
+    passed: errors.length === 0,
+    errors,
+  };
 }
 
 export function artifactPresenceGate(
   artifactRoot: string,
-  required: ReadonlyArray<string>,
+  required: ReadonlyArray<string> = REQUIRED_ARTIFACT_NAMES,
 ): GateResult {
-  const errors = required
-    .filter((n) => !existsSync(join(artifactRoot, n)))
-    .map((n) => `missing artifact: ${n}`);
-  return { passed: errors.length === 0, gateName: 'artifact-presence', errors };
+  const errors = required.filter((name) => !existsSync(join(artifactRoot, name)));
+
+  return {
+    gateName: 'artifact-presence',
+    passed: errors.length === 0,
+    errors,
+  };
 }
 
-export function artifactFilenameGate(artifactRoot: string): GateResult {
+export function artifactFilenameGate(
+  artifactRoot: string,
+  required: ReadonlyArray<string> = REQUIRED_ARTIFACT_NAMES,
+): GateResult {
+  const present = new Set(readdirSync(artifactRoot));
+  const errors = [...present].filter(
+    (name) =>
+      (/^\d{2}-/.test(name) || name.endsWith('.md') || name.endsWith('.json')) &&
+      !required.includes(name),
+  );
+
+  return {
+    gateName: 'artifact-filename',
+    passed: errors.length === 0,
+    errors,
+  };
+}
+
+export function demoExposureGate(artifactRoot: string): GateResult {
+  const forbidden = ['prompt chain', 'internal reasoning', 'pack-law-internal', 'rule-debug'];
   const errors: string[] = [];
-  try {
-    const files = readdirSync(artifactRoot);
-    const numbered = files.filter((f) => /^\d{2}-/.test(f));
-    for (const f of numbered) {
-      if (!REQUIRED_ARTIFACT_NAMES.includes(f)) errors.push(`unexpected artifact: ${f}`);
+
+  for (const file of readdirSync(artifactRoot)) {
+    const lowerName = file.toLowerCase();
+    if (forbidden.some((token) => lowerName.includes(token))) {
+      errors.push(`filename:${file}`);
+      continue;
     }
-  } catch {
-    errors.push(`cannot read artifactRoot: ${artifactRoot}`);
+
+    if (file.endsWith('.md')) {
+      const content = readFileSync(join(artifactRoot, file), 'utf8').toLowerCase();
+      if (forbidden.some((token) => content.includes(token))) {
+        errors.push(`content:${file}`);
+      }
+    }
   }
-  return { passed: errors.length === 0, gateName: 'artifact-filename', errors };
+
+  return {
+    gateName: 'demo-exposure',
+    passed: errors.length === 0,
+    errors,
+  };
+}
+
+export function packMutationGate(manifest: PackManifest): GateResult {
+  const forbiddenFields = ['overridePipeline', 'disablePass1', 'disablePass2', 'alteredArtifacts'];
+  const keys = Object.keys(manifest as unknown as Record<string, unknown>);
+  const errors = forbiddenFields.filter((field) => keys.includes(field));
+
+  return {
+    gateName: 'pack-mutation',
+    passed: errors.length === 0,
+    errors,
+  };
+}
+
+export function scopeChangeLogGate(changeLogPath: string): GateResult {
+  if (!existsSync(changeLogPath)) {
+    return {
+      gateName: 'scope-change-log',
+      passed: true,
+      errors: [],
+    };
+  }
+
+  const content = readFileSync(changeLogPath, 'utf8');
+  const passed = content.includes('owner-approved');
+
+  return {
+    gateName: 'scope-change-log',
+    passed,
+    errors: passed ? [] : ['missing owner-approved marker'],
+  };
+}
+
+export function deterministicReplayGate(runDir1: string, runDir2: string): GateResult {
+  const artifactNames = (dir: string): string[] =>
+    readdirSync(dir)
+      .filter((file) => /^\d{2}-/.test(file) || file.endsWith('.md') || file.endsWith('.json'))
+      .sort();
+
+  const left = artifactNames(runDir1);
+  const right = artifactNames(runDir2);
+
+  const errors: string[] = [];
+
+  for (const file of left) {
+    if (!right.includes(file)) {
+      errors.push(`missing-in-run2:${file}`);
+    }
+  }
+
+  for (const file of right) {
+    if (!left.includes(file)) {
+      errors.push(`missing-in-run1:${file}`);
+    }
+  }
+
+  return {
+    gateName: 'deterministic-replay',
+    passed: errors.length === 0,
+    errors,
+  };
 }
 
 export function runAllGates(
   run: RunRecord,
   findings: Finding[],
-  laneMap: Map<string, string>,
+  laneMap: ReadonlyMap<string, string>,
+  manifest?: PackManifest,
+  changeLogPath = 'logs/scope-change.log',
+  replayDirs?: { runDir1: string; runDir2: string },
 ): GateResult[] {
-  return [
-    noCertificationLanguageGate(run.runId),
+  const outputBriefPath = join(run.artifactRoot, '10-output-brief.md');
+  const outputBrief = existsSync(outputBriefPath) ? readFileSync(outputBriefPath, 'utf8') : '';
+
+  const results: GateResult[] = [
+    noCertificationLanguageGate(outputBrief),
     confidenceRangeGate(findings),
     noLane3AuthorityGate(findings, laneMap),
-    artifactPresenceGate(run.artifactRoot, REQUIRED_ARTIFACT_NAMES),
+    artifactPresenceGate(run.artifactRoot),
     artifactFilenameGate(run.artifactRoot),
+    demoExposureGate(run.artifactRoot),
+    scopeChangeLogGate(changeLogPath),
   ];
+
+  if (manifest) {
+    results.push(packMutationGate(manifest));
+  }
+
+  if (replayDirs) {
+    results.push(deterministicReplayGate(replayDirs.runDir1, replayDirs.runDir2));
+  }
+
+  return results;
 }
