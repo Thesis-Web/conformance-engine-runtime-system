@@ -5,9 +5,10 @@ import { loadCase } from './case-manager.js';
 import { transition } from './state-machine.js';
 import { ingestFile, validateCaseSize } from '../core/ingest.js';
 import { extractText } from '../core/extractor.js';
-import { normalizeText, buildChunkId } from '../core/normalizer.js';
+import { chunkText } from '../core/chunker.js';
 import { classifyDocument } from '../core/classifier.js';
-import { buildArtifacts } from '../artifacts/artifact-builder.js';
+import { buildComparisonPairs } from '../core/compare.js';
+import { buildArtifacts, emitOperatorPrompt } from '../artifacts/artifact-builder.js';
 import { generateAsks } from '../core/ask-generator.js';
 import { runAllGates } from '../validation/gates.js';
 import { runPass1 } from '../core/pass1-adapter.js';
@@ -23,7 +24,6 @@ import type { RunRecord, SourceReference, Finding, IngestedFile } from '../types
 import type { GateResult } from '../validation/gates.js';
 import { readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 
 export interface RunCaseInput {
   casePath: string;
@@ -94,52 +94,44 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'ingested');
     saveRun(run);
 
-    // Steps 6-7: extract, normalize, classify
+    // Steps 6-7: extract, normalize via chunker (§14 + §15), classify
+    // §14.3 — chunking is deterministic and governs SourceReference production
     const sourceRefs: SourceReference[] = [];
     const classifications: Array<{ fileId: string; result: ReturnType<typeof classifyDocument> }> =
       [];
     for (const file of ingestedFiles) {
       if (!file.contentAccepted) continue;
       const extraction = extractText(file.storedPath, file.fileId);
-      const normalizedText = normalizeText(extraction.rawText);
-      const sourceRef: SourceReference = {
-        sourceRefId: randomUUID(),
-        fileId: file.fileId,
-        docClass: 'SPEC_SHEET',
-        chunkOrdinal: 0,
-        text: extraction.rawText,
-        normalizedText,
-        metadata: {
-          parserVersion: extraction.parserVersion,
-          usedOcrFallback: extraction.usedOcrFallback,
-        },
-      };
+
+      // Classify first so chunker can use the correct docClass
       const classResult = classifyDocument({
         filename: file.originalFilename,
-        contentSnippet: normalizedText.slice(0, 500),
+        contentSnippet: extraction.rawText.slice(0, 500),
         classMapRules: pack.classMap,
       });
-      sourceRefs.push({ ...sourceRef, docClass: classResult.docClass });
       classifications.push({ fileId: file.fileId, result: classResult });
+
+      // §14.3 — chunk into governed SourceReferences using canonical chunker
+      const chunks = chunkText(extraction.rawText, file.fileId, classResult.docClass);
+
+      // Attach extraction metadata to each chunk's metadata
+      for (const chunk of chunks) {
+        sourceRefs.push({
+          ...chunk,
+          metadata: {
+            ...chunk.metadata,
+            parserVersion: extraction.parserVersion,
+            usedOcrFallback: extraction.usedOcrFallback,
+          },
+        });
+      }
     }
     transition(run.status, 'classified');
     run = updateRunStatus(run, 'classified');
     saveRun(run);
 
-    // Step 8: comparison pairs (stub cross-product — §17.7 ContradictionPattern wiring pending)
-    const comparisonPairs = sourceRefs
-      .flatMap((refA, i) =>
-        sourceRefs.slice(i + 1).map((refB) => ({
-          pairId: randomUUID(),
-          runId: run.runId,
-          packId: pack.packId,
-          sourceARefId: refA.sourceRefId,
-          sourceBRefId: refB.sourceRefId,
-          comparisonType: 'parameter_match' as const,
-          parameterKey: refA.docClass,
-        })),
-      )
-      .slice(0, 50);
+    // Step 8: §17.7 canonical buildComparisonPairs — not a stub cross-product
+    const comparisonPairs = buildComparisonPairs(sourceRefs, pack, run);
     transition(run.status, 'compare_pairs_built');
     run = updateRunStatus(run, 'compare_pairs_built');
     saveRun(run);
@@ -190,6 +182,26 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
 
     // Step 13: asks
     const asks = generateAsks(allFindings, pack);
+
+    // §27.2 — emit operator-prompt artifact if any findings require escalation.
+    // In human-as-interface-first mode this signals the operator that manual
+    // review is needed before the run output can be treated as clean.
+    const escalatedFindings = allFindings.filter((f) => f.escalationRequired);
+    if (escalatedFindings.length > 0) {
+      mkdirSync(run.artifactRoot, { recursive: true });
+      emitOperatorPrompt({
+        runId: run.runId,
+        step: 'post-merge-escalation-review',
+        reason: `${escalatedFindings.length} finding(s) require engineer review before output is considered clean.`,
+        requiredInputShape: {
+          reviewedFindingIds: 'comma-separated list of findingId values reviewed',
+          engineerDecision: 'accepted | rejected | deferred per finding',
+          notes: 'free-form engineer notes',
+        },
+        blocking: true,
+        artifactRoot: run.artifactRoot,
+      });
+    }
 
     // Steps 14-15: artifacts + gates
     buildArtifacts({

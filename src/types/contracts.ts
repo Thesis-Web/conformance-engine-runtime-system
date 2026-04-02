@@ -110,3 +110,14 @@ export interface ComparisonPair {
   parameterKey: string;
   patternId?: string;
 }
+
+// §27.2 — OperatorPrompt: emitted as 12-operator-prompt.json when the runtime
+// needs human bridge input in human-as-interface-first mode.
+export interface OperatorPrompt {
+  promptId: Uuid;
+  runId: Uuid;
+  step: string;
+  reason: string;
+  requiredInputShape: Record<string, string>;
+  blocking: boolean;
+}

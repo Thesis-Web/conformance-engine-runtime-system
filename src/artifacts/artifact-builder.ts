@@ -1,5 +1,6 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import type {
   IngestedFile,
   Finding,
@@ -7,6 +8,7 @@ import type {
   RunRecord,
   CaseRecord,
   ComparisonPair,
+  OperatorPrompt,
 } from '../types/index.js';
 import type { ClassificationResult } from '../core/classifier.js';
 import { REQUIRED_ARTIFACT_NAMES } from '../validation/gates.js';
@@ -138,4 +140,32 @@ export function buildArtifacts(input: ArtifactInput): void {
     join(input.run.artifactRoot, '11-engineer-review-packet.md'),
     buildEngineerPacket(input),
   );
+}
+
+// §27.2 — emitOperatorPrompt: writes 12-operator-prompt.json when the runtime
+// needs human bridge input. Blocking=true means the run cannot safely proceed
+// without operator action.
+export interface OperatorPromptInput {
+  runId: string;
+  step: string;
+  reason: string;
+  requiredInputShape: Record<string, string>;
+  blocking: boolean;
+  artifactRoot: string;
+}
+
+export function emitOperatorPrompt(input: OperatorPromptInput): OperatorPrompt {
+  const prompt: OperatorPrompt = {
+    promptId: randomUUID(),
+    runId: input.runId,
+    step: input.step,
+    reason: input.reason,
+    requiredInputShape: input.requiredInputShape,
+    blocking: input.blocking,
+  };
+  writeFileSync(
+    join(input.artifactRoot, '12-operator-prompt.json'),
+    JSON.stringify(prompt, null, 2),
+  );
+  return prompt;
 }

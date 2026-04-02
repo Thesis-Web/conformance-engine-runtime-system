@@ -18,8 +18,8 @@
     "artifact:validate": "npx tsx scripts/validate-artifacts.ts",
     "pack:validate": "npx tsx scripts/validate-packs.ts",
     "replay:smoke": "npx tsx scripts/replay-smoke.ts",
-    "run:poc": "node -e \"console.log('run:poc placeholder')\"",
-    "run:validate": "node -e \"console.log('run:validate placeholder')\"",
+    "run:poc": "npx tsx scripts/run-poc.ts",
+    "run:validate": "npx tsx scripts/run-validate.ts",
     "ci:gate": "npm run lint && npm run typecheck && npm run test && npm run test:integration && npm run schema:validate && npm run artifact:validate && npm run pack:validate && npm run replay:smoke"
   },
   "devDependencies": {
