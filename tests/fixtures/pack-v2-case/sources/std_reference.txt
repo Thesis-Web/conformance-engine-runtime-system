@@ -1,0 +1,8 @@
+STANDARD REFERENCE — APPLIANCE
+Standard: California Title 20 Appliance Efficiency Regulations
+Current Adopted Version: 2023
+Governing Reference: CEC Title 20 2023
+DOE Test Procedure: CFR 431.304-2020 (current adopted)
+AHRI Directory: AHRI 1200-2013 as reference for commercial refrigeration
+MAEDbS: CEC public appliance certification database
+This reference is a curated corpus entry for governed pack comparison.

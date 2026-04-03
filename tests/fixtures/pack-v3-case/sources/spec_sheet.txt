@@ -1,0 +1,8 @@
+EQUIPMENT SPECIFICATION SHEET
+Equipment: Precision Cooling Unit Model CRAC-DC-500-X
+Manufacturer: DataCool Systems, Inc.
+Rated Capacity: 480kW at ASHRAE A2 conditions
+Operating Environment: ASHRAE Class A2 — 10C to 35C inlet
+Certification: UL 1998 listed, FM approved
+Equipment Model: CRAC-DC-500-X
+ASHRAE Class Claimed: A2

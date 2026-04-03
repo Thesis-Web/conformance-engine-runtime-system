@@ -8,9 +8,9 @@ export interface RuleInput {
   pairs: ComparisonPair[];
   findings: Finding[];
   pack: PackManifest;
-  /** sourceRefId → SourceLane map (CONTRA-AUDIT-002 fix: keyed on sourceRefId, not fileId) */
+  /** sourceRefId → SourceLane map */
   laneMap?: ReadonlyMap<string, string>;
-  /** Source references needed for RULE-STALE-001 text inspection (HOLE-AUDIT-001) */
+  /** Source references for text inspection */
   sourceRefs?: ReadonlyArray<SourceReference>;
 }
 
@@ -32,19 +32,14 @@ const FORBIDDEN_CERTIFICATION_PHRASES = [
   'this system certifies',
 ];
 
-/**
- * CONTRA-AUDIT-005 fix: RULE-CERT-001 must emit a CONTRA finding, not throw.
- * Throwing crashed the run before artifacts were written, bypassing all gates.
- * The noCertificationLanguageGate (§32.2) independently checks output-brief.
- * This rule flags the offending finding so the gate has something to act on.
- */
+// RULE-CERT-001: flag any finding whose narrative contains certification language.
+// Emits CONTRA rather than throwing so gates can inspect the output.
 const RULE_CERT_001: DeterministicRule = {
   ruleId: 'RULE-CERT-001',
   packId: 'all',
   applies: () => true,
   execute: (input) => {
     const results: RuleResult[] = [];
-
     for (const finding of input.findings) {
       const haystack = finding.narrativeDescription.toLowerCase();
       const hit = FORBIDDEN_CERTIFICATION_PHRASES.find((phrase) => haystack.includes(phrase));
@@ -77,10 +72,39 @@ const RULE_CERT_001: DeterministicRule = {
         });
       }
     }
-
     return results;
   },
 };
+
+// ---------------------------------------------------------------------------
+// DRIFT-003 fix: RULE_HOLE_001 — per-pack case-minimum required classes.
+//
+// Spec §26.2–§26.4 defines required class sets per pack, not all supported
+// classes. Previously RULE_HOLE_001 iterated supportedDocumentClasses and
+// emitted HOLE for any absent class — far broader than spec requires.
+//
+// Case minimums per spec:
+//   Pack v1 (§26.2): DESIGN_PLANS, TEST_REPORT, ENG_LETTER, STD_REFERENCE
+//                    required; plus at least one of COMPLIANCE_CERT,
+//                    MFR_SUBMITTAL, FIELD_ANNOTATION.
+//   Pack v2 (§26.3): SPEC_SHEET, TEST_REPORT, MFR_SUBMITTAL, STD_REFERENCE
+//   Pack v3 (§26.4): DESIGN_PLANS (or equivalent schedule), SPEC_SHEET,
+//                    TEST_REPORT, STD_REFERENCE
+// ---------------------------------------------------------------------------
+
+const PACK_REQUIRED_CLASSES: Readonly<Record<string, readonly string[]>> = {
+  'pack-california-highrise-v1': ['DESIGN_PLANS', 'TEST_REPORT', 'ENG_LETTER', 'STD_REFERENCE'],
+  'pack-california-appliance-refrig-v2': [
+    'SPEC_SHEET',
+    'TEST_REPORT',
+    'MFR_SUBMITTAL',
+    'STD_REFERENCE',
+  ],
+  'pack-california-datacenter-v3': ['DESIGN_PLANS', 'SPEC_SHEET', 'TEST_REPORT', 'STD_REFERENCE'],
+};
+
+// Pack v1 also requires at least one of these three optional classes (§26.2)
+const PACK_V1_OPTIONAL_ONE_OF = ['COMPLIANCE_CERT', 'MFR_SUBMITTAL', 'FIELD_ANNOTATION'] as const;
 
 const RULE_HOLE_001: DeterministicRule = {
   ruleId: 'RULE-HOLE-001',
@@ -89,29 +113,192 @@ const RULE_HOLE_001: DeterministicRule = {
   execute: (input) => {
     const results: RuleResult[] = [];
 
-    const existingNarratives = new Set(
-      input.findings.map((finding) => finding.narrativeDescription),
+    // Determine which doc classes are present in the case via sourceRefs tags or pairs.
+    // A class is "present" if at least one sourceRef carries it (via chunk metadata)
+    // or a pair references it as a parameterKey.
+    const presentClasses = new Set<string>();
+    for (const ref of input.sourceRefs ?? []) {
+      const dc = ref.metadata['docClass'];
+      if (typeof dc === 'string') presentClasses.add(dc);
+    }
+    for (const finding of input.findings) {
+      for (const tag of finding.tags) presentClasses.add(tag);
+    }
+    for (const pair of input.pairs) {
+      presentClasses.add(pair.parameterKey);
+    }
+
+    const requiredClasses = PACK_REQUIRED_CLASSES[input.pack.packId] ?? [];
+    const existingNarratives = new Set(input.findings.map((f) => f.narrativeDescription));
+
+    for (const docClass of requiredClasses) {
+      if (presentClasses.has(docClass)) continue;
+
+      const narrativeDescription =
+        `Required document class '${docClass}' is absent from the case package. ` +
+        `Pack ${input.pack.packId} mandates this class for a valid POC run per spec §26.`;
+
+      if (existingNarratives.has(narrativeDescription)) continue;
+
+      results.push({
+        finding: {
+          findingId: randomUUID(),
+          runId: input.run.runId,
+          packId: input.pack.packId,
+          findingClass: 'HOLE',
+          severity: 'high',
+          confidenceClass: 'deterministic',
+          confidenceBand: 'high',
+          extractionConfidence: 0.9,
+          classificationConfidence: 0.9,
+          contradictionConfidence: 0.9,
+          applicabilityConfidence: 0.9,
+          sourceAuthorityConfidence: 0.9,
+          sourceARefId: `PACK:${docClass}`,
+          escalationRequired: false,
+          narrativeDescription,
+          resolutionPath: `Provide a ${docClass} document in the case package.`,
+          tags: [docClass, 'RULE-HOLE-001'],
+          emittedBy: 'rules',
+        },
+      });
+    }
+
+    // Pack v1 §26.2: also require at least one of COMPLIANCE_CERT / MFR_SUBMITTAL / FIELD_ANNOTATION
+    if (input.pack.packId === 'pack-california-highrise-v1') {
+      const hasOneOf = PACK_V1_OPTIONAL_ONE_OF.some((cls) => presentClasses.has(cls));
+      if (!hasOneOf) {
+        const narrativeDescription =
+          `Pack v1 requires at least one of: ${PACK_V1_OPTIONAL_ONE_OF.join(', ')}. ` +
+          `None are present in the case package.`;
+        if (!existingNarratives.has(narrativeDescription)) {
+          results.push({
+            finding: {
+              findingId: randomUUID(),
+              runId: input.run.runId,
+              packId: input.pack.packId,
+              findingClass: 'HOLE',
+              severity: 'high',
+              confidenceClass: 'deterministic',
+              confidenceBand: 'high',
+              extractionConfidence: 0.9,
+              classificationConfidence: 0.9,
+              contradictionConfidence: 0.9,
+              applicabilityConfidence: 0.9,
+              sourceAuthorityConfidence: 0.9,
+              sourceARefId: 'PACK:ONE_OF_OPTIONAL',
+              escalationRequired: false,
+              narrativeDescription,
+              resolutionPath: `Add at least one of: ${PACK_V1_OPTIONAL_ONE_OF.join(', ')}.`,
+              tags: ['RULE-HOLE-001', 'one-of-optional'],
+              emittedBy: 'rules',
+            },
+          });
+        }
+      }
+    }
+
+    return results;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// DRIFT-004 fix: RULE_CONTRA_001 — actual value comparison.
+//
+// Spec §18.2: "Generate CONTRA when two sources cannot both be true under
+// the same case condition." Previously this emitted CONTRA from pattern
+// match on parameterKey alone — no actual value divergence confirmed.
+//
+// Fix: for each parameter_match pair that hits a contradiction pattern,
+// extract the value associated with the parameterKey from the normalized
+// text of both sourceA and sourceB. If both values are found and differ →
+// deterministic CONTRA. If values cannot be extracted → AMBIGUITY with
+// escalation (interpretive boundary, spec §17.4.2).
+//
+// Value extraction: looks for lines containing the parameterKey (case-
+// insensitive, normalized spaces) and reads the token after the first
+// colon or equals sign on that line. Simple but deterministic for the
+// fixture and real document shapes used in this build.
+// ---------------------------------------------------------------------------
+
+function extractParameterValue(text: string, parameterKey: string): string | null {
+  const keyPattern = parameterKey.replace(/_/g, '[_ ]');
+  const regex = new RegExp(`${keyPattern}\\s*[:=]\\s*(.+)`, 'i');
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    const match = regex.exec(line);
+    if (match) {
+      const value = match[1]?.trim();
+      return value && value.length > 0 ? value.toLowerCase() : null;
+    }
+  }
+  return null;
+}
+
+function normalizeValue(v: string): string {
+  return v.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+const RULE_CONTRA_001: DeterministicRule = {
+  ruleId: 'RULE-CONTRA-001',
+  packId: 'all',
+  applies: (input) =>
+    input.pairs.some((p) => p.comparisonType === 'parameter_match') &&
+    (input.sourceRefs?.length ?? 0) > 0,
+  execute: (input) => {
+    const results: RuleResult[] = [];
+    if (!input.sourceRefs) return results;
+
+    const sourceRefMap = new Map<string, SourceReference>(
+      input.sourceRefs.map((r) => [r.sourceRefId, r]),
     );
 
-    for (const docClass of input.pack.supportedDocumentClasses) {
-      const hasPair = input.pairs.some((pair) => pair.parameterKey === docClass);
-      const hasFinding = input.findings.some((finding) => finding.tags.includes(docClass));
+    for (const pair of input.pairs) {
+      if (pair.comparisonType !== 'parameter_match') continue;
+      if (!pair.sourceBRefId) continue;
 
-      if (!hasPair && !hasFinding) {
+      const patternMatches = input.pack.contradictionPatterns.some((pattern) =>
+        pattern.parameterKeys.includes(pair.parameterKey),
+      );
+      if (!patternMatches) continue;
+
+      const refA = sourceRefMap.get(pair.sourceARefId);
+      const refB = sourceRefMap.get(pair.sourceBRefId);
+      if (!refA || !refB) continue;
+
+      const valueA = extractParameterValue(refA.normalizedText, pair.parameterKey);
+      const valueB = extractParameterValue(refB.normalizedText, pair.parameterKey);
+
+      // Both values found — compare them
+      if (valueA !== null && valueB !== null) {
+        if (normalizeValue(valueA) === normalizeValue(valueB)) continue; // agreement, no finding
+
+        const severity =
+          pair.parameterKey === 'fire_rating' || pair.parameterKey === 'seismic_reference'
+            ? 'critical'
+            : 'high';
+
         const narrativeDescription =
-          'No source references found for required document class: ' + docClass;
+          `Contradicting values for parameter '${pair.parameterKey}': ` +
+          `Source A reports "${valueA}", Source B reports "${valueB}". ` +
+          `Sources ${pair.sourceARefId} and ${pair.sourceBRefId} cannot both be correct.`;
 
-        if (existingNarratives.has(narrativeDescription)) {
-          continue;
-        }
+        const alreadyPresent = input.findings.some(
+          (f) =>
+            f.findingClass === 'CONTRA' &&
+            f.sourceARefId === pair.sourceARefId &&
+            f.sourceBRefId === pair.sourceBRefId &&
+            f.narrativeDescription === narrativeDescription,
+        );
+        if (alreadyPresent) continue;
 
         results.push({
           finding: {
             findingId: randomUUID(),
             runId: input.run.runId,
             packId: input.pack.packId,
-            findingClass: 'HOLE',
-            severity: 'high',
+            findingClass: 'CONTRA',
+            severity,
             confidenceClass: 'deterministic',
             confidenceBand: 'high',
             extractionConfidence: 0.9,
@@ -119,10 +306,52 @@ const RULE_HOLE_001: DeterministicRule = {
             contradictionConfidence: 0.9,
             applicabilityConfidence: 0.9,
             sourceAuthorityConfidence: 0.9,
-            sourceARefId: 'PACK:' + docClass,
+            sourceARefId: pair.sourceARefId,
+            sourceBRefId: pair.sourceBRefId,
             escalationRequired: false,
             narrativeDescription,
-            tags: [docClass],
+            resolutionPath: `Reconcile value for '${pair.parameterKey}' between the two sources.`,
+            tags: [pair.parameterKey, 'RULE-CONTRA-001'],
+            emittedBy: 'rules',
+          },
+        });
+      } else {
+        // Value(s) could not be extracted from text — interpretive boundary (§17.4.2)
+        // Emit AMBIGUITY with escalation rather than asserting a false deterministic CONTRA.
+        const narrativeDescription =
+          `Parameter '${pair.parameterKey}' appears in contradiction pattern but value could not ` +
+          `be deterministically extracted from one or both sources ` +
+          `(${pair.sourceARefId} / ${pair.sourceBRefId ?? 'n/a'}). ` +
+          `Manual comparison required.`;
+
+        const alreadyPresent = input.findings.some(
+          (f) =>
+            f.findingClass === 'AMBIGUITY' &&
+            f.sourceARefId === pair.sourceARefId &&
+            f.narrativeDescription === narrativeDescription,
+        );
+        if (alreadyPresent) continue;
+
+        results.push({
+          finding: {
+            findingId: randomUUID(),
+            runId: input.run.runId,
+            packId: input.pack.packId,
+            findingClass: 'AMBIGUITY',
+            severity: 'medium',
+            confidenceClass: 'interpretive',
+            confidenceBand: 'low',
+            extractionConfidence: 0.4,
+            classificationConfidence: 0.6,
+            contradictionConfidence: 0.4,
+            applicabilityConfidence: 0.5,
+            sourceAuthorityConfidence: 0.7,
+            sourceARefId: pair.sourceARefId,
+            sourceBRefId: pair.sourceBRefId,
+            escalationRequired: true,
+            narrativeDescription,
+            askText: `Manually compare '${pair.parameterKey}' values between the two sources and confirm whether a contradiction exists.`,
+            tags: [pair.parameterKey, 'RULE-CONTRA-001', 'value-extraction-failed'],
             emittedBy: 'rules',
           },
         });
@@ -133,23 +362,18 @@ const RULE_HOLE_001: DeterministicRule = {
   },
 };
 
-/**
- * RULE-LANE3-001: flag findings whose source refs are Lane 3 live_candidate.
- * Depends on laneMap being keyed on sourceRefId (CONTRA-AUDIT-002 fix).
- */
+// RULE-LANE3-001: flag findings whose source refs are Lane 3 live_candidate.
 const RULE_LANE3_001: DeterministicRule = {
   ruleId: 'RULE-LANE3-001',
   packId: 'all',
   applies: (input) => Boolean(input.laneMap && input.laneMap.size > 0),
   execute: (input) => {
     const results: RuleResult[] = [];
-
     for (const finding of input.findings) {
       const sourceALane = input.laneMap?.get(finding.sourceARefId);
       const sourceBLane = finding.sourceBRefId
         ? input.laneMap?.get(finding.sourceBRefId)
         : undefined;
-
       if (sourceALane === 'live_candidate' || sourceBLane === 'live_candidate') {
         results.push({
           finding: {
@@ -163,90 +387,11 @@ const RULE_LANE3_001: DeterministicRule = {
         });
       }
     }
-
     return results;
   },
 };
 
-const RULE_CONTRA_001: DeterministicRule = {
-  ruleId: 'RULE-CONTRA-001',
-  packId: 'all',
-  applies: (input) => input.pairs.some((pair) => pair.comparisonType === 'parameter_match'),
-  execute: (input) => {
-    const results: RuleResult[] = [];
-
-    for (const pair of input.pairs) {
-      if (pair.comparisonType !== 'parameter_match') {
-        continue;
-      }
-
-      const patternMatches = input.pack.contradictionPatterns.some((pattern) =>
-        pattern.parameterKeys.includes(pair.parameterKey),
-      );
-
-      if (!patternMatches) {
-        continue;
-      }
-
-      const severity =
-        pair.parameterKey === 'fire_rating' || pair.parameterKey === 'seismic_reference'
-          ? 'critical'
-          : 'high';
-
-      const narrativeDescription =
-        `Contradicting values for parameter: ${pair.parameterKey} between sources ` +
-        `${pair.sourceARefId} and ${pair.sourceBRefId}`;
-
-      const alreadyPresent = input.findings.some(
-        (finding) =>
-          finding.findingClass === 'CONTRA' &&
-          finding.sourceARefId === pair.sourceARefId &&
-          finding.sourceBRefId === pair.sourceBRefId &&
-          finding.narrativeDescription === narrativeDescription,
-      );
-
-      if (alreadyPresent) {
-        continue;
-      }
-
-      results.push({
-        finding: {
-          findingId: randomUUID(),
-          runId: input.run.runId,
-          packId: input.pack.packId,
-          findingClass: 'CONTRA',
-          severity,
-          confidenceClass: 'deterministic',
-          confidenceBand: 'high',
-          extractionConfidence: 0.9,
-          classificationConfidence: 0.9,
-          contradictionConfidence: 0.9,
-          applicabilityConfidence: 0.9,
-          sourceAuthorityConfidence: 0.9,
-          sourceARefId: pair.sourceARefId,
-          sourceBRefId: pair.sourceBRefId,
-          escalationRequired: false,
-          narrativeDescription,
-          tags: [pair.parameterKey],
-          emittedBy: 'rules',
-        },
-      });
-    }
-
-    return results;
-  },
-};
-
-/**
- * HOLE-AUDIT-001 fix: RULE-STALE-001 — deterministic stale-version detection.
- * Spec §18.6: generate STALE when cited version is outside pack-governed allowed set.
- * Spec §17.7.3: version_check pairs encode standard-citation comparisons.
- *
- * For each version_check pair where staleBehavior === 'STALE_finding':
- *   1. Look up the citing source text via sourceRefs
- *   2. Extract 4-digit year tokens from the text
- *   3. If any year token is NOT in allowedVersions → emit STALE with citations
- */
+// RULE-STALE-001: deterministic stale-version detection (spec §18.6, §17.7.3).
 const RULE_STALE_001: DeterministicRule = {
   ruleId: 'RULE-STALE-001',
   packId: 'all',
@@ -265,31 +410,24 @@ const RULE_STALE_001: DeterministicRule = {
     for (const pair of input.pairs) {
       if (pair.comparisonType !== 'version_check') continue;
 
-      // parameterKey format: "standard_version:{standardId}"
       const standardId = pair.parameterKey.replace('standard_version:', '');
       const policyEntry = input.pack.standardVersionPolicy.entries.find(
         (e) => e.standardId === standardId,
       );
-
       if (!policyEntry || policyEntry.staleBehavior !== 'STALE_finding') continue;
 
       const citingRef = sourceRefMap.get(pair.sourceARefId);
       if (!citingRef) continue;
 
       const searchText = citingRef.normalizedText + ' ' + JSON.stringify(citingRef.metadata);
-
-      // Extract 4-digit year tokens (19xx / 20xx) from source text
       const yearPattern = /\b(19|20)\d{2}\b/g;
       const yearMatches = [...searchText.matchAll(yearPattern)].map((m) => m[0] ?? '');
       const uniqueYears = [...new Set(yearMatches)];
-
       const staleVersions = uniqueYears.filter(
         (v) => v.length > 0 && !policyEntry.allowedVersions.includes(v),
       );
-
       if (staleVersions.length === 0) continue;
 
-      // Deduplicate: skip if STALE for this sourceRef+standard already emitted
       const alreadyEmitted = input.findings.some(
         (f) =>
           f.findingClass === 'STALE' &&
@@ -328,7 +466,6 @@ const RULE_STALE_001: DeterministicRule = {
         },
       });
     }
-
     return results;
   },
 };
@@ -343,20 +480,14 @@ export const CORE_RULES: DeterministicRule[] = [
 
 export function applyDeterministicRules(input: RuleInput): Finding[] {
   const emitted = new Map<string, Finding>();
-
   for (const finding of input.findings) {
     emitted.set(finding.findingId, finding);
   }
-
   for (const rule of CORE_RULES) {
-    if (!rule.applies(input)) {
-      continue;
-    }
-
+    if (!rule.applies(input)) continue;
     for (const result of rule.execute(input)) {
       emitted.set(result.finding.findingId, result.finding);
     }
   }
-
   return [...emitted.values()];
 }

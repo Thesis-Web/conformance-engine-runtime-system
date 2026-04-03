@@ -9,6 +9,7 @@ import type {
   CaseRecord,
   ComparisonPair,
   OperatorPrompt,
+  SourceReference,
 } from '../types/index.js';
 import type { ClassificationResult } from '../core/classifier.js';
 import { REQUIRED_ARTIFACT_NAMES } from '../validation/gates.js';
@@ -18,6 +19,8 @@ export interface ArtifactInput {
   run: RunRecord;
   caseRecord: CaseRecord;
   ingestedFiles: IngestedFile[];
+  sourceRefs: SourceReference[];
+  sourceRefLaneMap: ReadonlyMap<string, string>;
   classifications: Array<{ fileId: string; result: ClassificationResult }>;
   comparisonPairs: ComparisonPair[];
   allFindings: Finding[];
@@ -88,11 +91,13 @@ export function buildArtifacts(input: ArtifactInput): void {
   mkdirSync(input.run.artifactRoot, { recursive: true });
   const w = (name: string, data: unknown) =>
     writeFileSync(join(input.run.artifactRoot, name), JSON.stringify(data, null, 2));
+
   w('01-ingest-log.json', {
     runId: input.run.runId,
     caseId: input.caseRecord.caseId,
     files: input.ingestedFiles,
   });
+
   w('02-provenance-ledger.json', {
     runId: input.run.runId,
     caseId: input.caseRecord.caseId,
@@ -103,6 +108,10 @@ export function buildArtifacts(input: ArtifactInput): void {
       ingestedAt: f.ingestedAt,
     })),
   });
+
+  // CONTRA-003 fix: emit sourceRefLanes array so run-validate and any
+  // post-run gate check can reconstruct the sourceRefId → SourceLane map
+  // without access to the in-memory sourceRefLaneMap from the run session.
   w('03-source-inventory.json', {
     runId: input.run.runId,
     sources: input.ingestedFiles.map((f) => ({
@@ -111,30 +120,42 @@ export function buildArtifacts(input: ArtifactInput): void {
       sourceLane: f.sourceLane,
       contentAccepted: f.contentAccepted,
     })),
+    sourceRefLanes: input.sourceRefs.map((ref) => ({
+      sourceRefId: ref.sourceRefId,
+      fileId: ref.fileId,
+      sourceLane: input.sourceRefLaneMap.get(ref.sourceRefId) ?? 'case_bound',
+    })),
   });
+
   w('04-classification-output.json', {
     runId: input.run.runId,
     classifications: input.classifications,
   });
+
   w('05-comparison-result-set.json', {
     runId: input.run.runId,
     comparisonPairs: input.comparisonPairs,
   });
+
   w('06-contradiction-log.json', {
     runId: input.run.runId,
     contradictions: input.allFindings.filter((f) => f.findingClass === 'CONTRA'),
   });
+
   w('07-hole-log.json', {
     runId: input.run.runId,
     holes: input.allFindings.filter((f) => f.findingClass === 'HOLE'),
   });
+
   w('08-ambiguity-queue.json', {
     runId: input.run.runId,
     ambiguities: input.allFindings.filter(
       (f) => f.findingClass === 'AMBIGUITY' || f.escalationRequired,
     ),
   });
+
   w('09-ask-list.json', { runId: input.run.runId, asks: input.asks });
+
   writeFileSync(join(input.run.artifactRoot, '10-output-brief.md'), buildOutputBrief(input));
   writeFileSync(
     join(input.run.artifactRoot, '11-engineer-review-packet.md'),
@@ -142,9 +163,7 @@ export function buildArtifacts(input: ArtifactInput): void {
   );
 }
 
-// §27.2 — emitOperatorPrompt: writes 12-operator-prompt.json when the runtime
-// needs human bridge input. Blocking=true means the run cannot safely proceed
-// without operator action.
+// §27.2 — emitOperatorPrompt
 export interface OperatorPromptInput {
   runId: string;
   step: string;

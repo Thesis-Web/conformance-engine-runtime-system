@@ -1,0 +1,9 @@
+MANUFACTURER SUBMITTAL
+Product: Commercial Refrigeration Unit Model CRU-2000
+Manufacturer: Pacific Cold Solutions, Inc.
+Submitted To: Review Engineer
+MAEDbS Filing Reference: MAEDbS-CRU2000-2024-001
+Certification Condition: COP 2.8 at 95F/55F per CFR 431.304
+Model Number: CRU-2000-STD
+This submittal is provided for engineer review. No approval is expressed
+by submission. All values require verification against test evidence.

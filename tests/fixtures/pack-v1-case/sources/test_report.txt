@@ -1,0 +1,12 @@
+LABORATORY TEST REPORT
+Test Reference: TR-2024-LA-0042
+Testing Laboratory: Pacific Coast Testing, Inc.
+Test Date: 2024-01-20
+Product: Rated curtain wall assembly
+Assembly Condition: Concrete shear wall with rated curtain wall assembly
+Fire Rating Tested: 2-hour per ASTM E119-2022
+Equipment Model: AHU-TOWER-2024-X
+Test Result: Assembly passed fire endurance test at 2-hour rating
+Standard Cited: ASTM E119-2019
+Note: This report must be reviewed by a licensed engineer before use in
+any compliance determination. No authority approval is expressed or implied.

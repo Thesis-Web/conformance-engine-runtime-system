@@ -1,0 +1,8 @@
+PRODUCT SPECIFICATION SHEET
+Product: Commercial Refrigeration Unit Model CRU-2000
+Manufacturer: Pacific Cold Solutions, Inc.
+Rated Efficiency: 2.8 COP per DOE test procedure CFR 431.304
+Assembly Condition: Standard ambient 95F outdoor / 55F indoor
+Certification Claim: CEC Title 20 compliant, MAEDbS listed
+Model Number: CRU-2000-STD
+Test Procedure Version: CFR 431.304-2020

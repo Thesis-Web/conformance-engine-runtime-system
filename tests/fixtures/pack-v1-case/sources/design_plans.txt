@@ -1,0 +1,11 @@
+DESIGN PLANS — STRUCTURAL AND ENERGY
+Project: High-rise Residential Tower — 123 Main Street, Los Angeles, CA
+Sheet: A-001 through A-045
+Discipline: Structural / Fire / Energy
+Governing References: California Building Code 2022, Title 24 Part 6 2022
+Seismic Design Category: D
+Fire Rating: 2-hour rated assembly per CBC Chapter 7
+Cooling Load: 450 tons design cooling load
+Equipment Model: AHU-TOWER-2024-X
+Assembly Condition: Concrete shear wall with rated curtain wall assembly
+Standard Version: CBC-2022 / T24-2022

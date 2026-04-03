@@ -1,0 +1,9 @@
+STANDARD REFERENCE EXCERPT
+Standard: California Building Code 2022
+Section: Chapter 16 — Structural Design
+Seismic Reference: ASCE 7-22 as adopted by CBC 2022
+Energy Reference: Title 24 Part 6 2022
+Fire Reference: CBC Chapter 7, 2022 Edition
+Standard Version: CBC-2022
+Current Adopted Version: 2022
+This reference document is a curated corpus entry for governed comparison.

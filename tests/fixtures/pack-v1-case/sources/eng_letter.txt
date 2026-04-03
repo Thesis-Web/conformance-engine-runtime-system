@@ -1,0 +1,11 @@
+ENGINEERING LETTER
+Re: Structural and Seismic Analysis — 123 Main Street High-rise Project
+Date: 2024-02-10
+Engineer of Record: J. Smith, PE
+The referenced structure has been analyzed for seismic demands in accordance
+with the California Building Code 2022, Chapter 16. The seismic design
+category is confirmed as Category D based on site class and mapped spectral
+values. The primary lateral system consists of concrete shear walls designed
+to resist code-level seismic forces. All referenced standards are current
+adopted versions. This letter presents findings for engineer review.
+Governing reference: CBC-2022 seismic provisions.

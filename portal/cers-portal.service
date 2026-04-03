@@ -1,0 +1,42 @@
+# /etc/systemd/system/cers-portal.service
+# Install:
+#   sudo cp cers-portal.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable cers-portal
+#   sudo systemctl start cers-portal
+#   sudo systemctl status cers-portal
+
+[Unit]
+Description=CERS Thin Portal Server
+After=network.target
+Documentation=https://github.com/Thesis-Web/conformance-engine-runtime-system
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/repos/conformance-engine-runtime-system/portal
+
+# PORT — change to 3002 if 3001 is taken by orbital
+Environment=PORT=3001
+Environment=NODE_ENV=production
+
+# tokens.json and usage.log share the droplet-root path used by orbital
+Environment=TOKENS_PATH=/home/deploy/tokens.json
+Environment=USAGE_LOG_PATH=/home/deploy/usage.log
+
+# Upload quarantine and runs dirs — isolated CERS paths
+Environment=UPLOADS_DIR=/home/deploy/repos/conformance-engine-runtime-system/portal/uploads
+Environment=RUNS_DIR=/home/deploy/repos/conformance-engine-runtime-system/runs
+
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cers-portal
+
+# Limit blast radius
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

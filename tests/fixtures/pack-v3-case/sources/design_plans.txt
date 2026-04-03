@@ -1,0 +1,9 @@
+DESIGN PLANS — DATA CENTER FACILITY
+Project: Tier III Data Center — Sacramento, CA
+Equipment Schedule Reference: ES-001 through ES-012
+Cooling System: Precision air cooling units, 500kW total IT load
+ASHRAE Environmental Class: A2 per ASHRAE 9.9-2021
+Cooling Load Spec: 500kW design IT load, 1.4 PUE design target
+Suppression System: Clean agent FM-200 per NFPA 2001
+Equipment Model: CRAC-DC-500-X
+Standard Reference: NFPA 75 2020 / NFPA 76 2020 / ASHRAE 9.9-2021

@@ -1,0 +1,7 @@
+STANDARD REFERENCE — DATA CENTER
+ASHRAE 9.9-2021: Thermal Guidelines for Data Processing Environments
+NFPA 75 2020: Standard for the Fire Protection of Information Technology Equipment
+NFPA 76 2020: Standard for the Fire Protection of Telecommunications Facilities
+UL 1998: Standard for Software in Programmable Components
+FM Global: Data Center Protection Reference, current edition
+Current adopted versions as governed by Pack v3 corpus.

@@ -1,0 +1,9 @@
+LABORATORY TEST REPORT — DATA CENTER EQUIPMENT
+Test Reference: DC-LAB-2024-0031
+Product: Precision Cooling Unit CRAC-DC-500-X
+Tested Capacity: 475kW at A2 inlet conditions
+ASHRAE Class Tested: A2 per ASHRAE 9.9-2021
+Equipment Model: CRAC-DC-500-X
+Suppression Compatibility: Verified clean agent compatible per NFPA 2001
+Note: Tested capacity 475kW differs from spec sheet claim of 480kW.
+Requires engineer review before compliance determination.

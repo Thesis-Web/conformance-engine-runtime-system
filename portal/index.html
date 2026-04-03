@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conformance Runtime Engine — Portal</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --red: #f85149;
+        --orange: #d29922;
+        --radius: 8px;
+      }
+      html,
+      body {
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* ── Layout ── */
+      .shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      .topbar {
+        border-bottom: 1px solid var(--border);
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface);
+      }
+      .topbar-logo {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .topbar-right {
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .topbar-right button {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      .topbar-right button:hover {
+        color: var(--text);
+        border-color: var(--muted);
+      }
+
+      main {
+        flex: 1;
+        padding: 32px 24px;
+        max-width: 860px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      section {
+        margin-bottom: 36px;
+      }
+      h2 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text);
+      }
+
+      /* ── Cards ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+      }
+
+      /* ── Drop zone ── */
+      .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 40px 24px;
+        text-align: center;
+        cursor: pointer;
+        -webkit-transition: border-color 0.15s;
+        transition: border-color 0.15s;
+      }
+      .drop-zone:hover,
+      .drop-zone.drag-over {
+        border-color: var(--accent);
+      }
+      .drop-zone p {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+      .drop-zone .hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        -webkit-transition: background 0.12s;
+        transition: background 0.12s;
+        touch-action: manipulation;
+      }
+      .btn-primary {
+        background: #1f6feb;
+        border-color: #388bfd;
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: #388bfd;
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: var(--border);
+        color: var(--text);
+      }
+      .btn-ghost:hover:not(:disabled) {
+        border-color: var(--muted);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* ── File list ── */
+      .file-list {
+        list-style: none;
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .file-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      .file-list li span {
+        color: var(--muted);
+      }
+      .file-list li button {
+        background: none;
+        border: none;
+        color: var(--red);
+        cursor: pointer;
+        font-size: 13px;
+        padding: 0 4px;
+      }
+
+      /* ── Pack selector ── */
+      select {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        color: var(--text);
+        font-size: 13px;
+        padding: 7px 10px;
+        width: 100%;
+        margin-bottom: 12px;
+        outline: none;
+      }
+      select:focus {
+        border-color: var(--accent);
+      }
+
+      /* ── Status pill ── */
+      .pill {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 20px;
+        border: 1px solid currentColor;
+      }
+      .pill-queued {
+        color: var(--orange);
+      }
+      .pill-running {
+        color: var(--accent);
+      }
+      .pill-complete {
+        color: var(--green);
+      }
+      .pill-failed {
+        color: var(--red);
+      }
+
+      /* ── Run list ── */
+      .run-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        gap: 12px;
+      }
+      .run-row:last-child {
+        border-bottom: none;
+      }
+      .run-id {
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .run-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      /* ── Artifact list ── */
+      .artifact-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+      }
+      .artifact-row:last-child {
+        border-bottom: none;
+      }
+      .artifact-name {
+        font-family: monospace;
+        color: var(--text);
+      }
+
+      /* ── Notice ── */
+      .notice {
+        background: #1a1f2e;
+        border: 1px solid #2a3555;
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-top: 12px;
+      }
+      .notice strong {
+        color: var(--text);
+      }
+
+      /* ── Footer ── */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 16px 24px;
+        text-align: center;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 600px) {
+        main {
+          padding: 20px 16px;
+        }
+        .topbar {
+          padding: 10px 16px;
+        }
+        .run-row {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="topbar">
+        <span class="topbar-logo">Conformance Runtime Engine</span>
+        <div class="topbar-right">
+          <span id="token-label">—</span>
+          <button id="sign-out-btn" type="button">Sign out</button>
+        </div>
+      </nav>
+
+      <main>
+        <!-- ── Upload ──────────────────────────────────────────────────── -->
+        <section id="upload-section">
+          <h2>Upload Certification Package</h2>
+          <div class="card">
+            <div
+              class="drop-zone"
+              id="drop-zone"
+              role="button"
+              tabindex="0"
+              aria-label="Upload files"
+            >
+              <p>Drop files here, or <strong style="color: var(--accent)">browse</strong></p>
+              <p class="hint">
+                Accepted: .pdf, .docx, .txt, .json, .csv · 100 MB per file · 20 files max
+              </p>
+              <input
+                type="file"
+                id="file-input"
+                multiple
+                accept=".pdf,.docx,.txt,.json,.csv"
+                style="display: none"
+              />
+            </div>
+            <ul class="file-list" id="file-list"></ul>
+
+            <div style="margin-top: 16px">
+              <label
+                style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px"
+                >Conformance Pack</label
+              >
+              <select id="pack-select">
+                <option value="pack-california-highrise-v1">
+                  California High-rise / Buildings (Pack v1)
+                </option>
+                <option value="pack-california-appliance-refrig-v2">
+                  Appliance / Refrigeration (Pack v2)
+                </option>
+                <option value="pack-california-datacenter-v3">Data Center (Pack v3)</option>
+              </select>
+              <button class="btn btn-primary" id="submit-btn" type="button" disabled>
+                Upload &amp; Queue Run
+              </button>
+            </div>
+
+            <div class="notice">
+              <strong>Human-review boundary:</strong> This system flags, traces, and asks — it does
+              not certify, approve, or replace licensed engineer review. All findings require
+              professional interpretation.
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Runs ────────────────────────────────────────────────────── -->
+        <section id="runs-section">
+          <h2>Runs</h2>
+          <div class="card" id="runs-card">
+            <p style="color: var(--muted); font-size: 13px" id="runs-empty">
+              No runs yet. Upload a package to start.
+            </p>
+          </div>
+        </section>
+
+        <!-- ── Artifact viewer ─────────────────────────────────────────── -->
+        <section id="artifacts-section" style="display: none">
+          <h2>
+            Artifacts —
+            <span
+              id="artifact-run-id"
+              style="font-family: monospace; font-size: 13px; color: var(--muted)"
+            ></span>
+          </h2>
+          <div class="card" id="artifacts-card"></div>
+        </section>
+      </main>
+
+      <footer>
+        Conformance Runtime Engine · ExNulla Lab · Invitation only · All findings require licensed
+        engineer review · Not a certification system
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var TOKEN_KEY = 'cers_token';
+        var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        // ── Token guard ────────────────────────────────────────────────────────
+        function getToken() {
+          try {
+            return sessionStorage.getItem(TOKEN_KEY);
+          } catch (e) {
+            return null;
+          }
+        }
+        var TOKEN = getToken();
+        if (!TOKEN || !UUID_RE.test(TOKEN)) {
+          window.location.href = '/';
+          throw new Error('no token');
+        }
+
+        // ── Sign out ───────────────────────────────────────────────────────────
+        document.getElementById('sign-out-btn').addEventListener('click', function () {
+          try {
+            sessionStorage.removeItem(TOKEN_KEY);
+          } catch (e) {}
+          window.location.href = '/';
+        });
+
+        // Display token label
+        var labelEl = document.getElementById('token-label');
+        fetch('/api/check-token?token=' + encodeURIComponent(TOKEN))
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            if (d.ok) {
+              labelEl.textContent =
+                d.label +
+                ' · ' +
+                d.remaining +
+                ' run' +
+                (d.remaining === 1 ? '' : 's') +
+                ' remaining';
+            } else {
+              window.location.href = '/?exhausted=1';
+            }
+          })
+          .catch(function () {
+            labelEl.textContent = '—';
+          });
+
+        // ── File staging ───────────────────────────────────────────────────────
+        var stagedFiles = [];
+        var dropZone = document.getElementById('drop-zone');
+        var fileInput = document.getElementById('file-input');
+        var fileList = document.getElementById('file-list');
+        var submitBtn = document.getElementById('submit-btn');
+
+        function formatSize(bytes) {
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function renderFileList() {
+          fileList.innerHTML = '';
+          stagedFiles.forEach(function (f, i) {
+            var li = document.createElement('li');
+            li.innerHTML =
+              '<strong style="word-break:break-all">' +
+              escHtml(f.name) +
+              '</strong>' +
+              '<span>' +
+              escHtml(formatSize(f.size)) +
+              '</span>';
+            var rm = document.createElement('button');
+            rm.textContent = '×';
+            rm.title = 'Remove';
+            rm.addEventListener('click', function () {
+              stagedFiles.splice(i, 1);
+              renderFileList();
+            });
+            li.appendChild(rm);
+            fileList.appendChild(li);
+          });
+          submitBtn.disabled = stagedFiles.length === 0;
+        }
+
+        function addFiles(files) {
+          var ALLOWED = new Set(['.pdf', '.docx', '.txt', '.json', '.csv']);
+          Array.from(files).forEach(function (f) {
+            var ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+            if (!ALLOWED.has(ext)) return; // silently skip
+            if (f.size > 100 * 1024 * 1024) return;
+            if (stagedFiles.length < 20) stagedFiles.push(f);
+          });
+          renderFileList();
+        }
+
+        dropZone.addEventListener('click', function () {
+          fileInput.click();
+        });
+        dropZone.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+        });
+        fileInput.addEventListener('change', function () {
+          addFiles(fileInput.files);
+          fileInput.value = '';
+        });
+
+        dropZone.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', function () {
+          dropZone.classList.remove('drag-over');
+        });
+        dropZone.addEventListener('drop', function (e) {
+          e.preventDefault();
+          dropZone.classList.remove('drag-over');
+          addFiles(e.dataTransfer.files);
+        });
+
+        // ── Submit ─────────────────────────────────────────────────────────────
+        var runs = []; // { runId, caseId, pack, status, ts }
+
+        submitBtn.addEventListener('click', function () {
+          if (stagedFiles.length === 0) return;
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Uploading…';
+
+          var form = new FormData();
+          stagedFiles.forEach(function (f) {
+            form.append('files', f);
+          });
+
+          fetch('/api/upload?token=' + encodeURIComponent(TOKEN), {
+            method: 'POST',
+            headers: { 'x-cers-token': TOKEN },
+            body: form,
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok) throw new Error(d.error || 'Upload failed.');
+              return fetch('/api/run?token=' + encodeURIComponent(TOKEN), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-cers-token': TOKEN },
+                body: JSON.stringify({
+                  caseId: d.caseId,
+                  packId: document.getElementById('pack-select').value,
+                }),
+              });
+            })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok) throw new Error(d.error || 'Run failed to queue.');
+              runs.unshift({
+                runId: d.runId,
+                caseId: d.caseId,
+                pack: document.getElementById('pack-select').value,
+                status: 'queued',
+                ts: new Date().toISOString(),
+              });
+              stagedFiles = [];
+              renderFileList();
+              renderRuns();
+              submitBtn.textContent = 'Upload & Queue Run';
+            })
+            .catch(function (e) {
+              alert(e.message);
+              submitBtn.textContent = 'Upload & Queue Run';
+              submitBtn.disabled = stagedFiles.length === 0;
+            });
+        });
+
+        // ── Run list ───────────────────────────────────────────────────────────
+        var runsCard = document.getElementById('runs-card');
+        var runsEmpty = document.getElementById('runs-empty');
+
+        function statusPill(status) {
+          var cls = 'pill-' + (status || 'queued');
+          return '<span class="pill ' + cls + '">' + escHtml(status || 'queued') + '</span>';
+        }
+
+        function renderRuns() {
+          if (runs.length === 0) {
+            runsEmpty.style.display = '';
+            return;
+          }
+          runsEmpty.style.display = 'none';
+          runsCard.innerHTML = runs
+            .map(function (r) {
+              return (
+                '<div class="run-row">' +
+                '<div>' +
+                '<div class="run-id">' +
+                escHtml(r.runId) +
+                '</div>' +
+                '<div style="font-size:11px;color:var(--muted);margin-top:2px">' +
+                escHtml(r.pack) +
+                ' · ' +
+                escHtml(r.ts.slice(0, 19).replace('T', ' ')) +
+                ' UTC</div>' +
+                '</div>' +
+                '<div class="run-actions">' +
+                statusPill(r.status) +
+                (r.status === 'complete'
+                  ? '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" data-runid="' +
+                    escHtml(r.runId) +
+                    '" type="button">Artifacts</button>'
+                  : '') +
+                '<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" data-refresh="' +
+                escHtml(r.runId) +
+                '" type="button">↻</button>' +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        runsCard.addEventListener('click', function (e) {
+          var artBtn = e.target.closest('[data-runid]');
+          var refBtn = e.target.closest('[data-refresh]');
+          if (artBtn) showArtifacts(artBtn.getAttribute('data-runid'));
+          if (refBtn) refreshRun(refBtn.getAttribute('data-refresh'));
+        });
+
+        function refreshRun(runId) {
+          fetch('/api/run/' + encodeURIComponent(runId) + '?token=' + encodeURIComponent(TOKEN), {
+            headers: { 'x-cers-token': TOKEN },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var run = runs.find(function (r) {
+                return r.runId === runId;
+              });
+              if (run && d.ok) {
+                run.status = d.status;
+                renderRuns();
+              }
+            })
+            .catch(function () {});
+        }
+
+        // ── Artifact viewer ────────────────────────────────────────────────────
+        var artifactsSection = document.getElementById('artifacts-section');
+        var artifactsCard = document.getElementById('artifacts-card');
+        var artifactRunIdEl = document.getElementById('artifact-run-id');
+
+        function showArtifacts(runId) {
+          artifactRunIdEl.textContent = runId;
+          artifactsSection.style.display = '';
+          artifactsCard.innerHTML = '<p style="color:var(--muted);font-size:13px">Loading…</p>';
+          artifactsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          fetch(
+            '/api/run/' +
+              encodeURIComponent(runId) +
+              '/artifacts?token=' +
+              encodeURIComponent(TOKEN),
+            {
+              headers: { 'x-cers-token': TOKEN },
+            },
+          )
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok || d.artifacts.length === 0) {
+                artifactsCard.innerHTML =
+                  '<p style="color:var(--muted);font-size:13px">No artifacts available yet. Run may still be in progress.</p>';
+                return;
+              }
+              artifactsCard.innerHTML = d.artifacts
+                .map(function (name) {
+                  var href =
+                    '/api/run/' +
+                    encodeURIComponent(runId) +
+                    '/artifact/' +
+                    encodeURIComponent(name) +
+                    '?token=' +
+                    encodeURIComponent(TOKEN);
+                  return (
+                    '<div class="artifact-row">' +
+                    '<span class="artifact-name">' +
+                    escHtml(name) +
+                    '</span>' +
+                    '<a class="btn btn-ghost" style="font-size:11px;padding:4px 10px" href="' +
+                    href +
+                    '" download="' +
+                    escHtml(name) +
+                    '">Download</a>' +
+                    '</div>'
+                  );
+                })
+                .join('');
+            })
+            .catch(function () {
+              artifactsCard.innerHTML =
+                '<p style="color:var(--red);font-size:13px">Failed to load artifacts.</p>';
+            });
+        }
+
+        // ── Utils ──────────────────────────────────────────────────────────────
+        function escHtml(str) {
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        // Initial render
+        renderRuns();
+      })();
+    </script>
+  </body>
+</html>

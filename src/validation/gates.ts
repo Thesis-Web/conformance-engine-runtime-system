@@ -18,6 +18,23 @@ export const REQUIRED_ARTIFACT_NAMES = [
   '11-engineer-review-packet.md',
 ] as const;
 
+// CONTRA-002 fix: optional artifacts 12-15 are spec-legal (§29.2).
+// The filename gate must allow them. These are not required but are not
+// violations when present. Any artifact with a number outside 00-15 or
+// that doesn't match the known naming pattern is still a gate failure.
+export const OPTIONAL_ARTIFACT_NAMES = [
+  '00-failure-log.json',
+  '12-operator-prompt.json',
+  '13-pass1-raw-findings.json',
+  '14-pass2-audit-findings.json',
+  '15-validation-report.json',
+] as const;
+
+const ALL_KNOWN_ARTIFACT_NAMES = new Set<string>([
+  ...REQUIRED_ARTIFACT_NAMES,
+  ...OPTIONAL_ARTIFACT_NAMES,
+]);
+
 export const FORBIDDEN_CERT_PHRASES = [
   'approved',
   'certified by engine',
@@ -101,16 +118,21 @@ export function artifactPresenceGate(
   };
 }
 
-export function artifactFilenameGate(
-  artifactRoot: string,
-  required: ReadonlyArray<string> = REQUIRED_ARTIFACT_NAMES,
-): GateResult {
-  const present = new Set(readdirSync(artifactRoot));
-  const errors = [...present].filter(
-    (name) =>
-      (/^\d{2}-/.test(name) || name.endsWith('.md') || name.endsWith('.json')) &&
-      !required.includes(name),
-  );
+// CONTRA-002 fix: gate rejects numbered artifacts NOT in the known-legal set
+// (required 01-11 + optional 00, 12-15). Previously it rejected any numbered
+// artifact not in REQUIRED_ARTIFACT_NAMES, which made spec-legal optional
+// artifacts like 12-operator-prompt.json a gate violation every run with
+// escalated findings.
+export function artifactFilenameGate(artifactRoot: string): GateResult {
+  const present = readdirSync(artifactRoot);
+  const errors = present.filter((name) => {
+    const isNumbered = /^\d{2}-/.test(name);
+    const isMarkdown = name.endsWith('.md');
+    const isJson = name.endsWith('.json');
+    if (!isNumbered && !isMarkdown && !isJson) return false;
+    if (name === 'run.json') return false;
+    return !ALL_KNOWN_ARTIFACT_NAMES.has(name);
+  });
 
   return {
     gateName: 'artifact-filename',

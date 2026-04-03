@@ -96,7 +96,31 @@ export async function main(): Promise<void> {
       break;
     }
     case 'validate-run': {
-      console.log('validate-run: stub — pending gate runner wiring');
+      // DIFF-001 fix: was a stub. Now calls validateRunDir() from run-validate.ts.
+      const runDir = args.values['run'];
+      if (!runDir) {
+        console.error('validate-run requires --run');
+        process.exit(1);
+      }
+      const { validateRunDir } = await import('../../scripts/run-validate.js');
+      try {
+        const result = validateRunDir(resolve(runDir));
+        for (const gate of result.gateResults) {
+          const status = gate.passed ? 'PASS' : 'FAIL';
+          console.log(
+            `[${status}] ${gate.gateName}${gate.errors.length > 0 ? ': ' + gate.errors.join(', ') : ''}`,
+          );
+        }
+        console.log('\nRequired artifact check:');
+        for (const a of result.artifactStatus) {
+          console.log(`  [${a.present ? 'OK' : 'MISSING'}] ${a.name}`);
+        }
+        console.log(`\nrun:validate — ${result.allPassed ? 'PASS' : 'FAIL'}`);
+        if (!result.allPassed) process.exit(1);
+      } catch (err) {
+        console.error(`validate-run ERROR — ${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
       break;
     }
     case 'replay-run': {

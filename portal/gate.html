@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conformance Runtime Engine — Access</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      .card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 440px;
+      }
+      .logo {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #58a6ff;
+        margin-bottom: 24px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: #1f2937;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        padding: 2px 7px;
+        color: #8b949e;
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #e6edf3;
+        margin-bottom: 8px;
+        line-height: 1.3;
+      }
+      .sub {
+        font-size: 13px;
+        color: #8b949e;
+        margin-bottom: 28px;
+        line-height: 1.6;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: #8b949e;
+        margin-bottom: 6px;
+        letter-spacing: 0.04em;
+      }
+      input[type='text'] {
+        width: 100%;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        color: #e6edf3;
+        font-size: 13px;
+        font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+        padding: 10px 12px;
+        outline: none;
+        /* explicit transition — avoids Safari focus-ring jitter */
+        -webkit-transition: border-color 0.15s;
+        transition: border-color 0.15s;
+        /* prevent iOS zoom on focus */
+        font-size: max(16px, 13px);
+      }
+      @media (min-width: 480px) {
+        input[type='text'] {
+          font-size: 13px;
+        }
+      }
+      input[type='text']:focus {
+        border-color: #58a6ff;
+      }
+      input[type='text'].is-error {
+        border-color: #f85149;
+      }
+      .error-msg {
+        font-size: 12px;
+        color: #f85149;
+        margin-top: 6px;
+        min-height: 16px;
+        line-height: 1.4;
+      }
+      button {
+        margin-top: 20px;
+        width: 100%;
+        background: #1f6feb;
+        border: 1px solid #388bfd;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 16px;
+        cursor: pointer;
+        /* explicit transitions — Safari requires -webkit- prefix for older versions */
+        -webkit-transition:
+          background 0.15s,
+          opacity 0.15s;
+        transition:
+          background 0.15s,
+          opacity 0.15s;
+        /* prevent double-tap zoom on iOS */
+        touch-action: manipulation;
+      }
+      button:hover:not(:disabled) {
+        background: #388bfd;
+      }
+      button:active:not(:disabled) {
+        background: #1158c7;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid #21262d;
+        margin: 28px 0;
+      }
+      .contact {
+        font-size: 12px;
+        color: #8b949e;
+        line-height: 1.7;
+        text-align: center;
+      }
+      .contact a {
+        color: #58a6ff;
+        text-decoration: none;
+      }
+      .contact a:hover {
+        text-decoration: underline;
+      }
+      .checking {
+        display: none;
+        font-size: 12px;
+        color: #8b949e;
+        margin-top: 8px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">ExNulla · Lab</div>
+      <span class="badge">Invitation only</span>
+      <h1>Conformance Runtime Engine</h1>
+      <p class="sub">
+        Can an LLM-backed runtime meet government-grade engineering conformance specs? Upload a
+        regulated certification package. Get source-cited findings back.
+      </p>
+
+      <div id="gate-form">
+        <label for="token-input">Access Token</label>
+        <input
+          type="text"
+          id="token-input"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <div class="error-msg" id="error-msg"></div>
+        <button id="enter-btn" type="button">Enter Tool</button>
+        <p class="checking" id="checking-msg">Verifying token…</p>
+      </div>
+
+      <hr class="divider" />
+
+      <p class="contact">
+        Don't have a token?<br />
+        Email <a href="mailto:lakeareallc@gmail.com">lakeareallc@gmail.com</a>
+        or message on
+        <a href="https://www.linkedin.com/in/james-huson/" target="_blank" rel="noreferrer"
+          >LinkedIn</a
+        >
+        to request access.
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var TOKEN_KEY = 'cers_token';
+        var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        var input = document.getElementById('token-input');
+        var btn = document.getElementById('enter-btn');
+        var errMsg = document.getElementById('error-msg');
+        var checking = document.getElementById('checking-msg');
+
+        // ── Helpers ─────────────────────────────────────────────────────────────
+        function setError(msg) {
+          errMsg.textContent = msg;
+          input.classList.add('is-error');
+          input.focus();
+        }
+        function clearError() {
+          errMsg.textContent = '';
+          input.classList.remove('is-error');
+        }
+        function setBusy(busy) {
+          btn.disabled = busy;
+          checking.style.display = busy ? 'block' : 'none';
+        }
+
+        // sessionStorage wrapper — Safari private mode can throw on write
+        function tryStore(val) {
+          try {
+            sessionStorage.setItem(TOKEN_KEY, val);
+          } catch (e) {
+            /* silent */
+          }
+        }
+        function tryRead() {
+          try {
+            return sessionStorage.getItem(TOKEN_KEY);
+          } catch (e) {
+            return null;
+          }
+        }
+        function tryClear() {
+          try {
+            sessionStorage.removeItem(TOKEN_KEY);
+          } catch (e) {
+            /* silent */
+          }
+        }
+
+        // ── Server-side token check ──────────────────────────────────────────────
+        // Uses fetch with no-cors-risky headers — just a query param so Safari
+        // doesn't block a preflight on a GET to same origin.
+        function verifyWithServer(token, onOk, onFail) {
+          var url = '/api/check-token?token=' + encodeURIComponent(token);
+          fetch(url, { method: 'GET', headers: { Accept: 'application/json' } })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (data) {
+              if (data.ok) {
+                onOk(data);
+              } else {
+                onFail(data.error || 'Token rejected.');
+              }
+            })
+            .catch(function () {
+              onFail('Could not reach server. Try again.');
+            });
+        }
+
+        // ── Enter flow ───────────────────────────────────────────────────────────
+        function tryEnter() {
+          clearError();
+          var val = input.value.trim();
+
+          if (!val) {
+            setError('Please enter your access token.');
+            return;
+          }
+          if (!UUID_RE.test(val)) {
+            setError('Token format is invalid. Check for typos.');
+            return;
+          }
+
+          setBusy(true);
+          verifyWithServer(
+            val,
+            function (data) {
+              // Valid — store and navigate
+              tryStore(val);
+              window.location.href = '/portal';
+            },
+            function (errText) {
+              setBusy(false);
+              setError(errText);
+              tryClear();
+            },
+          );
+        }
+
+        btn.addEventListener('click', tryEnter);
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') tryEnter();
+        });
+
+        // ── Auto-advance if token already in session ─────────────────────────────
+        // Re-validate with server first — don't blindly trust a stale session value.
+        var existing = tryRead();
+        if (existing && UUID_RE.test(existing)) {
+          setBusy(true);
+          verifyWithServer(
+            existing,
+            function () {
+              window.location.href = '/portal';
+            },
+            function () {
+              tryClear();
+              setBusy(false);
+            },
+          );
+        }
+
+        // ── Exhausted state (redirected back with ?exhausted=1) ──────────────────
+        if (window.location.search.indexOf('exhausted=1') !== -1) {
+          document.getElementById('gate-form').style.display = 'none';
+          errMsg.style.display = 'block';
+          errMsg.style.color = '#f6c177';
+          errMsg.style.fontSize = '13px';
+          errMsg.textContent =
+            'Token exhausted. Email lakeareallc@gmail.com or message on LinkedIn for a new token.';
+        }
+      })();
+    </script>
+  </body>
+</html>

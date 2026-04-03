@@ -17,9 +17,7 @@ export function hashArtifact(filePath: string): string {
   const raw = readFileSync(filePath, 'utf8');
   const stripped = stripTimestamps(raw);
   const hash = createHash('sha256');
-
   hash.update(stripped, 'utf8');
-
   return hash.digest('hex');
 }
 
@@ -35,26 +33,23 @@ export function replayRun(runDir: string): ReplayResult {
 
   const allFiles = readdirSync(runDir);
   const artifactFiles = allFiles.filter((file) => {
-    if (file === 'run.json') {
-      return false;
-    }
-
-    if (!/^0[0-9]-.*\.(json|md)$/.test(file) && !/^1[0-5]-.*\.(json|md)$/.test(file)) {
-      return false;
-    }
-
+    if (file === 'run.json') return false;
+    if (!/^\d{2}-.*\.(json|md)$/.test(file)) return false;
     return true;
   });
 
   const artifactHashes: Record<string, string> = {};
-
   for (const file of artifactFiles) {
     const fullPath = join(runDir, file);
     artifactHashes[file] = hashArtifact(fullPath);
   }
 
   const artifactCount = artifactFiles.length;
-  const verified = artifactCount >= 9;
+
+  // DRIFT-002 fix: spec §29.1 requires 11 artifacts (01-11).
+  // Previous threshold was >= 9, which allowed two missing required artifacts
+  // and still returned verified: true. Threshold raised to match spec law.
+  const verified = artifactCount >= 11;
 
   return {
     runId: run.runId,

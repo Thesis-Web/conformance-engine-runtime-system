@@ -59,6 +59,18 @@ function writeFailureLog(artifactRoot: string, runId: string, stage: string, err
   }
 }
 
+// CONTRA-001: gate fail-close. Advisory gates do not block completion.
+const ADVISORY_GATES = new Set<string>(['scope-change-log']);
+
+function enforceGates(results: GateResult[], stage: string): void {
+  const failures = results.filter((r) => !r.passed && !ADVISORY_GATES.has(r.gateName));
+  if (failures.length === 0) return;
+  const summary = failures.map((r) => `[${r.gateName}]: ${r.errors.join(', ')}`).join(' | ');
+  throw new Error(
+    `Gate failure at stage '${stage}' — ${failures.length} gate(s) failed. ${summary}`,
+  );
+}
+
 export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
   const caseRecord = loadCase(input.casePath);
   const pack = loadPack(input.packManifestPath);
@@ -71,7 +83,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
   saveRun(run);
 
   try {
-    // Steps 4-5: ingest
     transition(run.status, 'ingesting');
     run = updateRunStatus(run, 'ingesting');
     saveRun(run);
@@ -100,23 +111,20 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'ingested');
     saveRun(run);
 
-    // Steps 6-7: extract, normalize via chunker (§14 + §15), classify
     const sourceRefs: SourceReference[] = [];
     const classifications: Array<{ fileId: string; result: ReturnType<typeof classifyDocument> }> =
       [];
     for (const file of ingestedFiles) {
       if (!file.contentAccepted) continue;
-      const extraction = extractText(file.storedPath, file.fileId);
-
+      // STUB-001 fix: extractText is now async (pdf-parse / mammoth)
+      const extraction = await extractText(file.storedPath, file.fileId);
       const classResult = classifyDocument({
         filename: file.originalFilename,
         contentSnippet: extraction.rawText.slice(0, 500),
         classMapRules: pack.classMap,
       });
       classifications.push({ fileId: file.fileId, result: classResult });
-
       const chunks = chunkText(extraction.rawText, file.fileId, classResult.docClass);
-
       for (const chunk of chunks) {
         sourceRefs.push({
           ...chunk,
@@ -132,17 +140,11 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'classified');
     saveRun(run);
 
-    // Step 8: §17.7 buildComparisonPairs
     const comparisonPairs = buildComparisonPairs(sourceRefs, pack, run);
     transition(run.status, 'compare_pairs_built');
     run = updateRunStatus(run, 'compare_pairs_built');
     saveRun(run);
 
-    // CONTRA-AUDIT-002 fix: build sourceRefId → SourceLane map by joining
-    // sourceRefs (which carry fileId) to ingestedFiles. Must be built BEFORE
-    // Step 11 (rules) and Step 15 (gates) — both query by sourceRefId.
-    // The old laneMap was keyed on fileId; gates/rules use sourceRefId — different UUIDs,
-    // so every lookup returned undefined and the Lane 3 gate passed vacuously.
     const fileIdToLane = new Map<string, SourceLane>(
       ingestedFiles.map((f) => [f.fileId, f.sourceLane]),
     );
@@ -150,7 +152,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
       sourceRefs.map((ref) => [ref.sourceRefId, fileIdToLane.get(ref.fileId) ?? 'case_bound']),
     );
 
-    // Step 9: Pass 1
     let pass1Out: Pass1Output = { findings: [], extractionNotes: [] };
     try {
       const raw = await runPass1({ run, sourceRefs, pack });
@@ -162,7 +163,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'pass1_complete');
     saveRun(run);
 
-    // Step 10: Pass 2
     let pass2Out: Pass2Output = { auditEntries: [], auditCommentary: 'pass2 stub' };
     try {
       pass2Out = await runPass2({ run, pass1: pass1Out, sourceRefs, pack });
@@ -173,7 +173,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'pass2_complete');
     saveRun(run);
 
-    // Step 11: Deterministic rules
     let rulesFindings: Finding[] = [];
     try {
       rulesFindings = applyDeterministicRules({
@@ -184,7 +183,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
         laneMap: sourceRefLaneMap,
         sourceRefs,
       });
-    } catch (err) {
+    } catch {
       rulesFindings = [];
     }
     const rulesOut: RulesOutput = { findings: rulesFindings };
@@ -192,14 +191,10 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'rules_complete');
     saveRun(run);
 
-    // Step 12: Merge
     const merged = mergeFindingSets(pass1Out, pass2Out, rulesOut);
     const allFindings = merged.findings;
-
-    // Step 13: asks
     const asks = generateAsks(allFindings, pack);
 
-    // §27.2 — emit operator-prompt if any findings require escalation
     const escalatedFindings = allFindings.filter((f) => f.escalationRequired);
     if (escalatedFindings.length > 0) {
       mkdirSync(run.artifactRoot, { recursive: true });
@@ -217,11 +212,12 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
       });
     }
 
-    // Steps 14-15: artifacts + gates
     buildArtifacts({
       run,
       caseRecord,
       ingestedFiles,
+      sourceRefs,
+      sourceRefLaneMap,
       classifications,
       comparisonPairs,
       allFindings,
@@ -232,11 +228,12 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     saveRun(run);
 
     const gateResults = runAllGates(run, allFindings, sourceRefLaneMap, pack);
+    enforceGates(gateResults, 'validation');
+
     transition(run.status, 'validated');
     run = updateRunStatus(run, 'validated');
     saveRun(run);
 
-    // Steps 16-17: complete
     transition(run.status, 'complete');
     run = updateRunStatus(run, 'complete');
     saveRun(run);

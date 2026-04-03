@@ -1,0 +1,10 @@
+LABORATORY TEST REPORT — REFRIGERATION
+Test Reference: LAB-2024-REFRIG-0089
+Test Date: 2024-02-14
+Product: Commercial Refrigeration Unit Model CRU-2000
+Assembly Condition: Standard ambient 95F outdoor / 55F indoor
+Tested COP: 2.6 at rated conditions
+Test Procedure: CFR 431.304-2019
+Testing Body: AHRI-accredited laboratory
+Note: Tested COP 2.6 differs from specification claim of 2.8 COP.
+This discrepancy requires engineer review before compliance determination.
