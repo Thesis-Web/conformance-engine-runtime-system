@@ -35,12 +35,32 @@ const SEVERITY_ORDER: ReadonlyArray<Finding['severity']> = [
   'info',
 ];
 
+// §30.1 — emit one citation line per finding: sourceA ref + optional sourceB ref.
+function citationLine(f: Finding): string {
+  const b = f.sourceBRefId !== undefined ? ` | Source B: ${f.sourceBRefId}` : '';
+  return `  - [${f.findingClass}/${f.findingId.slice(0, 8)}] Source A: ${f.sourceARefId}${b} — ${f.narrativeDescription.slice(0, 120)}`;
+}
+
 function buildOutputBrief(input: ArtifactInput): string {
   const contras = input.allFindings.filter((f) => f.findingClass === 'CONTRA');
   const holes = input.allFindings.filter((f) => f.findingClass === 'HOLE');
   const ambigs = input.allFindings.filter(
     (f) => f.findingClass === 'AMBIGUITY' || f.escalationRequired,
   );
+
+  // CONTRA-OUTPUT-001 fix: spec §30.1 requires "citations per item" — each summary
+  // section must include source citation lines, not aggregate counts alone.
+  const contraLines = contras.length > 0 ? contras.map(citationLine) : ['  (none)'];
+  const holeLines = holes.length > 0 ? holes.map(citationLine) : ['  (none)'];
+  const ambigLines = ambigs.length > 0 ? ambigs.map(citationLine) : ['  (none)'];
+  const askLines =
+    input.asks.length > 0
+      ? input.asks.map(
+          (a) =>
+            `  - [ASK/${a.askId.slice(0, 8)}] [${a.askType}] ${a.text.slice(0, 120)} (severity: ${a.severity})`,
+        )
+      : ['  (none)'];
+
   return [
     `# CERS Output Brief`,
     `## Case Summary`,
@@ -52,13 +72,17 @@ function buildOutputBrief(input: ArtifactInput): string {
     `## Source Inventory Summary`,
     `Files ingested: ${input.ingestedFiles.length} | Accepted: ${input.ingestedFiles.filter((f) => f.contentAccepted).length}`,
     `## Contradiction Summary`,
-    `Contradictions: ${contras.length}`,
+    `Contradictions detected: ${contras.length}`,
+    ...contraLines,
     `## Hole Summary`,
-    `Holes: ${holes.length}`,
+    `Holes detected: ${holes.length}`,
+    ...holeLines,
     `## Ambiguity Summary`,
     `Ambiguities/Escalations: ${ambigs.length}`,
+    ...ambigLines,
     `## Ask Summary`,
     `Asks: ${input.asks.length} | Required for clean output: ${input.asks.filter((a) => a.requiredForCleanOutput).length}`,
+    ...askLines,
     ``,
     `> OPERATOR NOTE: This output is not a certification, approval, or signoff. All findings require licensed engineer review.`,
   ].join('\n');
@@ -75,15 +99,42 @@ function buildEngineerPacket(input: ArtifactInput): string {
       lines.push(
         `- Severity: ${f.severity} | Class: ${f.confidenceClass} | Escalated: ${f.escalationRequired}`,
       );
-      lines.push(
-        `- Source A: ${f.sourceARefId}${f.sourceBRefId !== undefined ? ` | Source B: ${f.sourceBRefId}` : ''}`,
-      );
+      // DIFF-PACKET-001 fix: spec §30.2 requires "citation references" as a first-class element
+      lines.push(`#### Citations`);
+      lines.push(`- Source A: \`${f.sourceARefId}\``);
+      if (f.sourceBRefId !== undefined) lines.push(`- Source B: \`${f.sourceBRefId}\``);
+      lines.push(`#### Narrative`);
       lines.push(`- ${f.narrativeDescription}`);
+      if (f.resolutionPath !== undefined) lines.push(`- Resolution path: ${f.resolutionPath}`);
       const relatedAsks = input.asks.filter((a) => a.linkedFindingId === f.findingId);
-      for (const a of relatedAsks) lines.push(`  - ASK [${a.askType}]: ${a.text}`);
+      if (relatedAsks.length > 0) {
+        lines.push(`#### Recommended Asks`);
+        for (const a of relatedAsks) lines.push(`  - ASK [${a.askType}]: ${a.text}`);
+      }
       lines.push('');
     }
   }
+
+  // DIFF-PACKET-001 fix: spec §30.2 requires "deferred/operator notes" section
+  const escalated = input.allFindings.filter((f) => f.escalationRequired);
+  lines.push(`## Deferred / Operator Notes`);
+  if (escalated.length > 0) {
+    lines.push(
+      `${escalated.length} finding(s) are escalated and require engineer resolution before output is considered clean.`,
+    );
+    for (const f of escalated) {
+      lines.push(
+        `- [${f.findingClass}/${f.findingId.slice(0, 8)}] ${f.narrativeDescription.slice(0, 100)}`,
+      );
+    }
+  } else {
+    lines.push(`No findings are currently escalated.`);
+  }
+  lines.push('');
+  lines.push(
+    `> This packet is not a certification, approval, or signoff. Engineer review and professional judgment are required.`,
+  );
+
   return lines.join('\n');
 }
 

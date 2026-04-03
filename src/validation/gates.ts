@@ -228,6 +228,29 @@ export function deterministicReplayGate(runDir1: string, runDir2: string): GateR
   };
 }
 
+// CONTRA-GATE-001 fix: collect all emitted markdown text for cert-language scan.
+// Spec §32.2 applies to the broader emitted output surface, not only output-brief.
+function collectAllEmittedText(artifactRoot: string): string {
+  const mdArtifacts = ['10-output-brief.md', '11-engineer-review-packet.md'];
+  const parts: string[] = [];
+  for (const name of mdArtifacts) {
+    const p = join(artifactRoot, name);
+    if (existsSync(p)) parts.push(readFileSync(p, 'utf8'));
+  }
+  // Also scan narrative descriptions embedded in JSON finding artifacts
+  const jsonArtifacts = [
+    '06-contradiction-log.json',
+    '07-hole-log.json',
+    '08-ambiguity-queue.json',
+    '09-ask-list.json',
+  ];
+  for (const name of jsonArtifacts) {
+    const p = join(artifactRoot, name);
+    if (existsSync(p)) parts.push(readFileSync(p, 'utf8'));
+  }
+  return parts.join('\n');
+}
+
 export function runAllGates(
   run: RunRecord,
   findings: Finding[],
@@ -236,11 +259,11 @@ export function runAllGates(
   changeLogPath = 'logs/scope-change.log',
   replayDirs?: { runDir1: string; runDir2: string },
 ): GateResult[] {
-  const outputBriefPath = join(run.artifactRoot, '10-output-brief.md');
-  const outputBrief = existsSync(outputBriefPath) ? readFileSync(outputBriefPath, 'utf8') : '';
+  // CONTRA-GATE-001: scan all emitted artifacts, not just output-brief
+  const allEmittedText = collectAllEmittedText(run.artifactRoot);
 
   const results: GateResult[] = [
-    noCertificationLanguageGate(outputBrief),
+    noCertificationLanguageGate(allEmittedText),
     confidenceRangeGate(findings),
     noLane3AuthorityGate(findings, laneMap),
     artifactPresenceGate(run.artifactRoot),

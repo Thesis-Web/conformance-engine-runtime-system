@@ -2,7 +2,8 @@ import { loadPack } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
 import { createRun, saveRun, updateRunStatus } from './run-manager.js';
 import { loadCase } from './case-manager.js';
-import { transition } from './state-machine.js';
+import { transition, makeArtifactPresenceChecker } from './state-machine.js';
+import { REQUIRED_ARTIFACT_NAMES } from '../validation/gates.js';
 import { ingestFile, validateCaseSize } from '../core/ingest.js';
 import { extractText } from '../core/extractor.js';
 import { chunkText } from '../core/chunker.js';
@@ -230,7 +231,10 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     const gateResults = runAllGates(run, allFindings, sourceRefLaneMap, pack);
     enforceGates(gateResults, 'validation');
 
-    transition(run.status, 'validated');
+    // CONTRA-STATE-001 fix: inject real artifact presence checker for artifacts_built → validated.
+    // This is the only transition where required files exist on disk.
+    const artifactChecker = makeArtifactPresenceChecker(run.artifactRoot, REQUIRED_ARTIFACT_NAMES);
+    transition(run.status, 'validated', artifactChecker);
     run = updateRunStatus(run, 'validated');
     saveRun(run);
 

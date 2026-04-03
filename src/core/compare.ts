@@ -85,8 +85,16 @@ function buildParameterMatchPairs(
 
 /**
  * §17.7.3 — presence_check pairs.
- * For each required document class in the pack that has no actual source ref,
- * emit a synthetic pair representing the absent artifact.
+ * DIFF-COMPARE-001 fix: presence checks must be scoped to document classes that are
+ * actually required by the pack's contradiction patterns. A HOLE means a *required*
+ * artifact is absent (spec §18.3), not merely a supported class that happens to be
+ * absent. Iterating over all supportedDocumentClasses generates spurious HOLEs for
+ * classes that are optional in a given case.
+ *
+ * Required classes are those that appear in at least one contradiction pattern's
+ * docClasses list — these are the classes the pack needs to execute its cross-check
+ * logic. If none are present, presence-check pairs would be vacuous anyway.
+ *
  * §17.7.4 rule 2 — synthetic sourceB ref is allowed for absent artifacts.
  */
 function buildPresenceCheckPairs(
@@ -97,14 +105,14 @@ function buildPresenceCheckPairs(
   const pairs: ComparisonPair[] = [];
   const presentClasses = new Set(classified.map((ref) => ref.docClass));
 
-  for (const requiredClass of pack.supportedDocumentClasses) {
+  // Derive required classes from contradiction patterns (the pack's cross-check targets).
+  // Use a Set to deduplicate across multiple patterns.
+  const requiredByPatterns = new Set(pack.contradictionPatterns.flatMap((p) => p.docClasses));
+
+  for (const requiredClass of requiredByPatterns) {
     if (presentClasses.has(requiredClass)) continue;
 
-    // Synthetic sourceA ref representing the required-artifact expectation
     const syntheticARefId = `${ABSENT_ARTIFACT_PREFIX}${requiredClass}`;
-
-    // §17.7.4 rule 2 — sourceBRefId is required on ComparisonPair; use synthetic
-    // absent-artifact placeholder to satisfy type law while conveying absence.
     const syntheticBRefId = `${ABSENT_ARTIFACT_PREFIX}EXPECT:${requiredClass}`;
 
     pairs.push({
