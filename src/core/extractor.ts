@@ -6,8 +6,8 @@ import type { ExtractionResult } from './normalizer.js';
 type ExtractMethod = ExtractionResult['method'];
 
 const EXT_METHOD_MAP: Readonly<Record<string, ExtractMethod>> = {
-  '.pdf': 'pdf-parse',
-  '.docx': 'docx-parse',
+  '.pdf': 'raw-utf8-stub',
+  '.docx': 'raw-utf8-stub',
   '.txt': 'text',
   '.md': 'text',
   '.json': 'json',

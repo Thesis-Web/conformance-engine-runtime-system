@@ -7,7 +7,7 @@
  * Only the Layer 3 pack law changes between runs.
  */
 
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -119,9 +119,17 @@ function makePocCaseDir(spec: PocCaseSpec): string {
     writeFileSync(join(sourceRoot, file.name), file.content, 'utf8');
   }
 
+  // CONTRA-AUDIT-004 fix: derive packId from the actual manifest being used,
+  // not hard-coded to pack-v1. Previously all three POC case.json files claimed
+  // to be pack-california-highrise-v1 regardless of which pack was running.
+  const manifestJson = JSON.parse(readFileSync(spec.packManifestPath, 'utf8')) as {
+    packId: string;
+  };
+  const resolvedPackId = manifestJson.packId;
+
   const caseRecord = {
     caseId: randomUUID(),
-    packId: 'pack-california-highrise-v1',
+    packId: resolvedPackId,
     title: `POC case: ${spec.packLabel}`,
     createdAt: new Date().toISOString(),
     createdBy: 'run:poc script',

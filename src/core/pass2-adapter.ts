@@ -37,13 +37,17 @@ export async function runPass2(input: Pass2Input): Promise<Pass2Output> {
     const entries = JSON.parse(text.replace(/```json|```/g, '').trim()) as Pass2AuditEntry[];
     return { auditEntries: entries, auditCommentary: `${entries.length} findings reviewed.` };
   } catch (err) {
+    // DIFF-AUDIT-002 fix: pass2 error must escalate findings, not silently confirm them.
+    // Silent confirm disabled the adversarial audit pass on any API outage.
+    // Per §9.6 and §16.2: pass2 failure routes all findings to engineer review.
     return {
       auditEntries: input.pass1.findings.map((f) => ({
         findingId: f.findingId,
-        action: 'confirm' as const,
-        auditNote: 'pass2 fallback',
+        action: 'escalate' as const,
+        forceEscalation: true,
+        auditNote: `pass2 unavailable — auto-escalated for engineer review. Error: ${String(err)}`,
       })),
-      auditCommentary: `pass2 error: ${String(err)}`,
+      auditCommentary: `pass2 error: ${String(err)} — all findings escalated per §9.6`,
     };
   }
 }

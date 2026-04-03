@@ -20,7 +20,13 @@ import {
   type Pass2Output,
   type RulesOutput,
 } from '../core/finding-merge.js';
-import type { RunRecord, SourceReference, Finding, IngestedFile } from '../types/index.js';
+import type {
+  RunRecord,
+  SourceReference,
+  Finding,
+  IngestedFile,
+  SourceLane,
+} from '../types/index.js';
 import type { GateResult } from '../validation/gates.js';
 import { readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -95,7 +101,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     saveRun(run);
 
     // Steps 6-7: extract, normalize via chunker (§14 + §15), classify
-    // §14.3 — chunking is deterministic and governs SourceReference production
     const sourceRefs: SourceReference[] = [];
     const classifications: Array<{ fileId: string; result: ReturnType<typeof classifyDocument> }> =
       [];
@@ -103,7 +108,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
       if (!file.contentAccepted) continue;
       const extraction = extractText(file.storedPath, file.fileId);
 
-      // Classify first so chunker can use the correct docClass
       const classResult = classifyDocument({
         filename: file.originalFilename,
         contentSnippet: extraction.rawText.slice(0, 500),
@@ -111,10 +115,8 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
       });
       classifications.push({ fileId: file.fileId, result: classResult });
 
-      // §14.3 — chunk into governed SourceReferences using canonical chunker
       const chunks = chunkText(extraction.rawText, file.fileId, classResult.docClass);
 
-      // Attach extraction metadata to each chunk's metadata
       for (const chunk of chunks) {
         sourceRefs.push({
           ...chunk,
@@ -130,13 +132,25 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'classified');
     saveRun(run);
 
-    // Step 8: §17.7 canonical buildComparisonPairs — not a stub cross-product
+    // Step 8: §17.7 buildComparisonPairs
     const comparisonPairs = buildComparisonPairs(sourceRefs, pack, run);
     transition(run.status, 'compare_pairs_built');
     run = updateRunStatus(run, 'compare_pairs_built');
     saveRun(run);
 
-    // Step 9: Pass 1 — BEST-SOLVE-001: map Pass1RawOutput.proposedFindings → Pass1Output.findings
+    // CONTRA-AUDIT-002 fix: build sourceRefId → SourceLane map by joining
+    // sourceRefs (which carry fileId) to ingestedFiles. Must be built BEFORE
+    // Step 11 (rules) and Step 15 (gates) — both query by sourceRefId.
+    // The old laneMap was keyed on fileId; gates/rules use sourceRefId — different UUIDs,
+    // so every lookup returned undefined and the Lane 3 gate passed vacuously.
+    const fileIdToLane = new Map<string, SourceLane>(
+      ingestedFiles.map((f) => [f.fileId, f.sourceLane]),
+    );
+    const sourceRefLaneMap = new Map<string, SourceLane>(
+      sourceRefs.map((ref) => [ref.sourceRefId, fileIdToLane.get(ref.fileId) ?? 'case_bound']),
+    );
+
+    // Step 9: Pass 1
     let pass1Out: Pass1Output = { findings: [], extractionNotes: [] };
     try {
       const raw = await runPass1({ run, sourceRefs, pack });
@@ -159,7 +173,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'pass2_complete');
     saveRun(run);
 
-    // Step 11: Deterministic rules — wired per HOLE-009
+    // Step 11: Deterministic rules
     let rulesFindings: Finding[] = [];
     try {
       rulesFindings = applyDeterministicRules({
@@ -167,6 +181,8 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
         pairs: comparisonPairs,
         findings: pass1Out.findings,
         pack,
+        laneMap: sourceRefLaneMap,
+        sourceRefs,
       });
     } catch (err) {
       rulesFindings = [];
@@ -176,16 +192,14 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'rules_complete');
     saveRun(run);
 
-    // Step 12: Merge — wired per HOLE-010
+    // Step 12: Merge
     const merged = mergeFindingSets(pass1Out, pass2Out, rulesOut);
     const allFindings = merged.findings;
 
     // Step 13: asks
     const asks = generateAsks(allFindings, pack);
 
-    // §27.2 — emit operator-prompt artifact if any findings require escalation.
-    // In human-as-interface-first mode this signals the operator that manual
-    // review is needed before the run output can be treated as clean.
+    // §27.2 — emit operator-prompt if any findings require escalation
     const escalatedFindings = allFindings.filter((f) => f.escalationRequired);
     if (escalatedFindings.length > 0) {
       mkdirSync(run.artifactRoot, { recursive: true });
@@ -217,8 +231,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'artifacts_built');
     saveRun(run);
 
-    const laneMap = new Map(ingestedFiles.map((f) => [f.fileId, f.sourceLane]));
-    const gateResults = runAllGates(run, allFindings, laneMap, pack);
+    const gateResults = runAllGates(run, allFindings, sourceRefLaneMap, pack);
     transition(run.status, 'validated');
     run = updateRunStatus(run, 'validated');
     saveRun(run);
