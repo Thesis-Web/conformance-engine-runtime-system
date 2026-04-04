@@ -221,6 +221,20 @@
       "docClasses": ["MFR_SUBMITTAL", "STD_REFERENCE"],
       "parameterKeys": ["procedure_version"],
       "severityDefault": "medium"
+    },
+    {
+      "patternId": "contra-004",
+      "description": "Engineering letter assertion wording vs underlying test report evidence support (\u00a724.3)",
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["certification_condition", "procedure_version"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-005",
+      "description": "Unsupported claim in submittal \u2014 engineering letter vs manufacturer submittal (\u00a724.3)",
+      "docClasses": ["ENG_LETTER", "MFR_SUBMITTAL"],
+      "parameterKeys": ["assembly_condition", "certification_condition"],
+      "severityDefault": "medium"
     }
   ],
   "optionalExtractors": [

@@ -287,6 +287,27 @@
       "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
       "parameterKeys": ["equipment_model", "assembly_condition"],
       "severityDefault": "medium"
+    },
+    {
+      "patternId": "contra-004",
+      "description": "Manufacturer submittal vs tested condition for building assemblies or rated materials (\u00a723.3)",
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["assembly_condition", "fire_rating", "equipment_model"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-005",
+      "description": "Field annotation vs formal requirement (\u00a723.3)",
+      "docClasses": ["FIELD_ANNOTATION", "DESIGN_PLANS"],
+      "parameterKeys": ["assembly_condition", "fire_rating"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-006",
+      "description": "Seismic analysis note or engineering letter reference vs governing structural/seismic citation (\u00a723.3)",
+      "docClasses": ["ENG_LETTER", "STD_REFERENCE"],
+      "parameterKeys": ["seismic_reference", "standard_version"],
+      "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
@@ -317,6 +338,13 @@
       {
         "standardId": "cbc",
         "citationKey": "CBC-2022",
+        "currentAdoptedVersion": "2022",
+        "allowedVersions": ["2022"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "cbc-seismic",
+        "citationKey": "CBC-SEISMIC-2022",
         "currentAdoptedVersion": "2022",
         "allowedVersions": ["2022"],
         "staleBehavior": "STALE_finding"

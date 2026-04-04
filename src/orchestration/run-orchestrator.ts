@@ -27,10 +27,15 @@ import type {
   Finding,
   IngestedFile,
   SourceLane,
+  FindingClass,
+  Severity,
+  ConfidenceClass,
+  ConfidenceBand,
 } from '../types/index.js';
 import type { GateResult } from '../validation/gates.js';
 import { readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 export interface RunCaseInput {
   casePath: string;
@@ -115,9 +120,13 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     const sourceRefs: SourceReference[] = [];
     const classifications: Array<{ fileId: string; result: ReturnType<typeof classifyDocument> }> =
       [];
+    // CLASSIFIER-FIX-001: collect unresolved files for escalation per §15.2 step 6.
+    // When docClass is null the file must not be silently assigned a default class.
+    // Instead it routes to the ambiguity queue as an AMBIGUITY finding.
+    const unresolvedClassFindings: Finding[] = [];
+
     for (const file of ingestedFiles) {
       if (!file.contentAccepted) continue;
-      // STUB-001 fix: extractText is now async (pdf-parse / mammoth)
       const extraction = await extractText(file.storedPath, file.fileId);
       const classResult = classifyDocument({
         filename: file.originalFilename,
@@ -125,7 +134,38 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
         classMapRules: pack.classMap,
       });
       classifications.push({ fileId: file.fileId, result: classResult });
-      const chunks = chunkText(extraction.rawText, file.fileId, classResult.docClass);
+
+      if (classResult.docClass === null) {
+        // §15.2 step 6: unresolved classification becomes escalation item
+        unresolvedClassFindings.push({
+          findingId: randomUUID(),
+          runId: run.runId,
+          packId: pack.packId,
+          findingClass: 'AMBIGUITY' as FindingClass,
+          severity: 'medium' as Severity,
+          confidenceClass: 'interpretive' as ConfidenceClass,
+          confidenceBand: 'low' as ConfidenceBand,
+          extractionConfidence: 0.0,
+          classificationConfidence: 0.0,
+          contradictionConfidence: 0.0,
+          applicabilityConfidence: 0.0,
+          sourceAuthorityConfidence: 0.0,
+          sourceARefId: file.fileId,
+          escalationRequired: true,
+          narrativeDescription: `Document class could not be resolved for file '${file.originalFilename}'. Manual classification required before comparison pairs can be constructed.`,
+          askText: `Provide document class for file '${file.originalFilename}' to enable comparison analysis.`,
+          tags: ['unresolved-class', 'escalation-required'],
+          emittedBy: 'rules',
+        });
+        continue; // skip chunking — no class means no valid source ref
+      }
+
+      const chunks = chunkText(
+        extraction.rawText,
+        file.fileId,
+        classResult.docClass,
+        file.mimeTypeDetected,
+      );
       for (const chunk of chunks) {
         sourceRefs.push({
           ...chunk,
@@ -187,7 +227,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     } catch {
       rulesFindings = [];
     }
-    const rulesOut: RulesOutput = { findings: rulesFindings };
+    const rulesOut: RulesOutput = { findings: [...rulesFindings, ...unresolvedClassFindings] };
     transition(run.status, 'rules_complete');
     run = updateRunStatus(run, 'rules_complete');
     saveRun(run);

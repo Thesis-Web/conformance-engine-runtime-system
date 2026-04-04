@@ -35,4 +35,3 @@ test-results/
 
 # generated schemas / artifacts
 *.tsbuildinfo
-portal/

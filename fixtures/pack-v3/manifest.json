@@ -272,6 +272,27 @@
       "docClasses": ["STD_REFERENCE", "DESIGN_PLANS"],
       "parameterKeys": ["fire_rating", "certification_condition"],
       "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-004",
+      "description": "FM/UL certification vs manufacturer submittal claims (\u00a725.3)",
+      "docClasses": ["MFR_SUBMITTAL", "STD_REFERENCE"],
+      "parameterKeys": ["certification_condition", "equipment_model"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-005",
+      "description": "Engineering letter assertion vs underlying cooling, fire, or equipment evidence support (\u00a725.3)",
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["cooling_class", "fire_rating", "certification_condition"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "contra-006",
+      "description": "Design plan or equipment schedule values vs FM/UL certified or tested equipment conditions (\u00a725.3)",
+      "docClasses": ["DESIGN_PLANS", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "cooling_class", "certification_condition"],
+      "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
@@ -312,6 +333,13 @@
         "currentAdoptedVersion": "2020",
         "allowedVersions": ["2020"],
         "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "ul-equipment",
+        "citationKey": "UL-EQUIP-CURRENT",
+        "currentAdoptedVersion": "current",
+        "allowedVersions": ["current"],
+        "staleBehavior": "warn"
       }
     ]
   }

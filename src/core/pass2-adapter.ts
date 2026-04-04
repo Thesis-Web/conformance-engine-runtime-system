@@ -10,11 +10,18 @@ export interface Pass2Input {
 }
 
 export async function runPass2(input: Pass2Input): Promise<Pass2Output> {
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY environment variable is required');
+  // PASS2-FIX-001: API key check is inside the try block so that a missing key
+  // flows through the internal escalation fallback rather than throwing before
+  // the catch. Previously, a pre-try throw was caught by the orchestrator's outer
+  // try/catch which set auditEntries:[] — leaving pass1 findings unescalated through
+  // the merge. Per spec §9.6 and §16.2: ALL pass2 failures must route findings to
+  // engineer review, not silently pass them through without escalation.
   const systemPrompt = `You are Pass2 adversarial auditor for CERS. Output ONLY a JSON array of Pass2AuditEntry objects. Each: { "findingId": string, "action": "confirm"|"downgrade"|"suppress"|"escalate", "auditNote": string }`;
   const userPrompt = `Audit these findings:\n${JSON.stringify(input.pass1.findings, null, 2)}\n\nReturn JSON array.`;
   try {
+    const apiKey = process.env['ANTHROPIC_API_KEY'];
+    if (!apiKey) throw new Error('ANTHROPIC_API_KEY environment variable is required');
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -37,9 +44,8 @@ export async function runPass2(input: Pass2Input): Promise<Pass2Output> {
     const entries = JSON.parse(text.replace(/```json|```/g, '').trim()) as Pass2AuditEntry[];
     return { auditEntries: entries, auditCommentary: `${entries.length} findings reviewed.` };
   } catch (err) {
-    // DIFF-AUDIT-002 fix: pass2 error must escalate findings, not silently confirm them.
-    // Silent confirm disabled the adversarial audit pass on any API outage.
-    // Per §9.6 and §16.2: pass2 failure routes all findings to engineer review.
+    // All failures — including missing API key, fetch errors, parse errors — flow here.
+    // Per spec §9.6 and §16.2: pass2 failure must escalate all findings to engineer review.
     return {
       auditEntries: input.pass1.findings.map((f) => ({
         findingId: f.findingId,
