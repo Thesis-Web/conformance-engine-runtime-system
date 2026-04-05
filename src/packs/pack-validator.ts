@@ -157,5 +157,154 @@ export function validatePack(manifest: PackManifest): PackValidationResult {
     }
   }
 
+  // 10. Mandatory contradiction-pattern coverage per pack — spec §§23.3, 24.3, 25.3
+  // Shape validation above proves patterns are well-formed. This check proves that
+  // the patterns substantively cover the mandatory doc-class pairs required by law.
+  // A green pack:validate must prove both shape and mandatory coverage.
+  validateMandatoryCoverage(manifest, errors);
+
   return { valid: errors.length === 0, errors };
+}
+
+// ---------------------------------------------------------------------------
+// Mandatory coverage law per §§23-25
+// Each entry is a required doc-class pair that must appear in at least one
+// contradictionPattern for the named pack. If a pair is absent the pack cannot
+// exercise the comparison logic spec law requires for that POC lane.
+// ---------------------------------------------------------------------------
+
+interface RequiredPair {
+  classA: string;
+  classB: string;
+  description: string; // human-readable law citation for error messages
+}
+
+const MANDATORY_COVERAGE: Readonly<Record<string, ReadonlyArray<RequiredPair>>> = {
+  'pack-california-highrise-v1': [
+    // §23.3 — plan detail vs test report condition
+    { classA: 'DESIGN_PLANS', classB: 'TEST_REPORT', description: '§23.3 plan vs test report' },
+    // §23.3 — engineering letter wording vs evidence support
+    { classA: 'ENG_LETTER', classB: 'TEST_REPORT', description: '§23.3 eng letter vs test report' },
+    // §23.3 — compliance cert field vs plan or specification statement
+    {
+      classA: 'COMPLIANCE_CERT',
+      classB: 'DESIGN_PLANS',
+      description: '§23.3 compliance cert vs design plans',
+    },
+    // §23.3 — manufacturer submittal vs tested condition for building assemblies
+    {
+      classA: 'MFR_SUBMITTAL',
+      classB: 'TEST_REPORT',
+      description: '§23.3 mfr submittal vs test report',
+    },
+    // §23.3 — field annotation vs formal requirement
+    {
+      classA: 'FIELD_ANNOTATION',
+      classB: 'DESIGN_PLANS',
+      description: '§23.3 field annotation vs design plans',
+    },
+    // §23.3 — seismic engineering letter vs governing structural/seismic citation
+    {
+      classA: 'ENG_LETTER',
+      classB: 'STD_REFERENCE',
+      description: '§23.3 eng letter vs std reference (seismic)',
+    },
+  ],
+  'pack-california-appliance-refrig-v2': [
+    // §24.3 — manufacturer submittal vs tested condition
+    {
+      classA: 'MFR_SUBMITTAL',
+      classB: 'TEST_REPORT',
+      description: '§24.3 mfr submittal vs test report',
+    },
+    // §24.3 — test report vs MAEDbS/standard claim
+    {
+      classA: 'TEST_REPORT',
+      classB: 'STD_REFERENCE',
+      description: '§24.3 test report vs std reference (MAEDbS)',
+    },
+    // §24.3 — procedure version vs current standard
+    {
+      classA: 'MFR_SUBMITTAL',
+      classB: 'STD_REFERENCE',
+      description: '§24.3 mfr submittal vs std reference (procedure version)',
+    },
+    // §24.3 — engineering letter assertion vs test report evidence
+    { classA: 'ENG_LETTER', classB: 'TEST_REPORT', description: '§24.3 eng letter vs test report' },
+    // §24.3 — unsupported claim in submittal (eng letter vs submittal)
+    {
+      classA: 'ENG_LETTER',
+      classB: 'MFR_SUBMITTAL',
+      description: '§24.3 eng letter vs mfr submittal (unsupported claim)',
+    },
+  ],
+  'pack-california-datacenter-v3': [
+    // §25.3 — cooling load spec vs equipment limits
+    {
+      classA: 'DESIGN_PLANS',
+      classB: 'SPEC_SHEET',
+      description: '§25.3 design plans vs spec sheet (cooling load)',
+    },
+    // §25.3 — ASHRAE class vs operating conditions
+    {
+      classA: 'STD_REFERENCE',
+      classB: 'SPEC_SHEET',
+      description: '§25.3 std reference vs spec sheet (ASHRAE class)',
+    },
+    // §25.3 — NFPA suppression reference vs installed/spec materials
+    {
+      classA: 'STD_REFERENCE',
+      classB: 'DESIGN_PLANS',
+      description: '§25.3 std reference vs design plans (NFPA)',
+    },
+    // §25.3 — FM/UL certification vs manufacturer submittal
+    {
+      classA: 'MFR_SUBMITTAL',
+      classB: 'STD_REFERENCE',
+      description: '§25.3 mfr submittal vs std reference (FM/UL)',
+    },
+    // §25.3 — engineering letter vs cooling/fire/equipment evidence
+    { classA: 'ENG_LETTER', classB: 'TEST_REPORT', description: '§25.3 eng letter vs test report' },
+    // §25.3 — design plan/equipment schedule vs tested conditions
+    {
+      classA: 'DESIGN_PLANS',
+      classB: 'TEST_REPORT',
+      description: '§25.3 design plans vs test report (equipment schedule)',
+    },
+  ],
+};
+
+function patternsCoversDocClasses(
+  patterns: PackManifest['contradictionPatterns'],
+  classA: string,
+  classB: string,
+): boolean {
+  // A pair is covered if at least one pattern's docClasses contains both classes
+  // (order-independent — the pair is symmetric for coverage purposes).
+  return patterns.some((p) => {
+    const classes = p.docClasses as string[];
+    return classes.includes(classA) && classes.includes(classB);
+  });
+}
+
+function validateMandatoryCoverage(manifest: PackManifest, errors: string[]): void {
+  const required = MANDATORY_COVERAGE[manifest.packId];
+  if (required === undefined) {
+    // No coverage law defined for this packId — not an error, but note it.
+    // When new packs are added their coverage law should be added above.
+    return;
+  }
+
+  const patterns = Array.isArray(manifest.contradictionPatterns)
+    ? manifest.contradictionPatterns
+    : [];
+
+  for (const pair of required) {
+    if (!patternsCoversDocClasses(patterns, pair.classA, pair.classB)) {
+      errors.push(
+        `mandatory coverage missing [${pair.description}]: no contradictionPattern covers ` +
+          `docClasses [${pair.classA}, ${pair.classB}]`,
+      );
+    }
+  }
 }
