@@ -25,7 +25,7 @@
     {
       "corpusId": "tx-iecc-2021",
       "authority": "primary",
-      "title": "International Energy Conservation Code 2021 — Texas commercial buildings",
+      "title": "International Energy Conservation Code 2021 \u2014 Texas commercial buildings",
       "versionLabel": "IECC 2021",
       "ownershipPackId": "pack-us-tx-buildings-v1",
       "citationKey": "IECC-2021-TX",
@@ -34,7 +34,7 @@
     {
       "corpusId": "tx-ibc-2015",
       "authority": "reference",
-      "title": "International Building Code 2015 — Texas prior adoption (reference only)",
+      "title": "International Building Code 2015 \u2014 Texas prior adoption (reference only)",
       "versionLabel": "IBC 2015",
       "ownershipPackId": "pack-us-tx-buildings-v1",
       "citationKey": "IBC-2015-TX",
@@ -53,21 +53,21 @@
       "ruleId": "tx-bldg-cm-002",
       "docClass": "TEST_REPORT",
       "matchCriteria": "filename contains test OR report OR lab OR inspection",
-      "confidence": 0.80,
+      "confidence": 0.8,
       "priority": 2
     },
     {
       "ruleId": "tx-bldg-cm-003",
       "docClass": "ENG_LETTER",
       "matchCriteria": "filename contains letter OR engineer OR PE OR stamped",
-      "confidence": 0.80,
+      "confidence": 0.8,
       "priority": 3
     },
     {
       "ruleId": "tx-bldg-cm-004",
       "docClass": "COMPLIANCE_CERT",
       "matchCriteria": "filename contains certificate OR cert OR compliance",
-      "confidence": 0.80,
+      "confidence": 0.8,
       "priority": 4
     },
     {
@@ -88,7 +88,7 @@
       "ruleId": "tx-bldg-cm-007",
       "docClass": "FIELD_ANNOTATION",
       "matchCriteria": "filename contains field OR annotation OR redline OR markup OR RFI",
-      "confidence": 0.70,
+      "confidence": 0.7,
       "priority": 7
     }
   ],
@@ -116,50 +116,83 @@
     {
       "patternId": "tx-bldg-plan-vs-test",
       "description": "Design plan assembly/fire conditions vs test report results",
-      "docClasses": ["DESIGN_PLANS", "TEST_REPORT"],
-      "parameterKeys": ["assembly_condition", "fire_rating", "seismic_reference"],
+      "docClasses": [
+        "DESIGN_PLANS",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "assembly_condition",
+        "fire_rating",
+        "seismic_reference"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-bldg-letter-vs-test",
       "description": "Engineering letter assertion vs test report evidence support",
-      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
-      "parameterKeys": ["engineering_assertion_vs_evidence"],
+      "docClasses": [
+        "ENG_LETTER",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "engineering_assertion_vs_evidence"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-bldg-submittal-vs-test",
       "description": "Manufacturer submittal vs tested assembly condition",
-      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
-      "parameterKeys": ["equipment_model", "assembly_condition"],
+      "docClasses": [
+        "MFR_SUBMITTAL",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "equipment_model",
+        "assembly_condition"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-bldg-cert-vs-plan",
       "description": "Compliance certificate field vs design plan statement",
-      "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
-      "parameterKeys": ["fire_rating", "assembly_condition"],
+      "docClasses": [
+        "COMPLIANCE_CERT",
+        "DESIGN_PLANS"
+      ],
+      "parameterKeys": [
+        "fire_rating",
+        "assembly_condition"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-bldg-annotation-vs-plan",
       "description": "Field annotation vs formal plan requirement",
-      "docClasses": ["FIELD_ANNOTATION", "DESIGN_PLANS"],
-      "parameterKeys": ["assembly_condition"],
+      "docClasses": [
+        "FIELD_ANNOTATION",
+        "DESIGN_PLANS"
+      ],
+      "parameterKeys": [
+        "assembly_condition"
+      ],
       "severityDefault": "medium"
     }
   ],
   "optionalExtractors": [
     {
       "hintId": "tx-bldg-ext-001",
-      "appliesTo": ["DESIGN_PLANS"],
+      "appliesTo": [
+        "DESIGN_PLANS"
+      ],
       "hintType": "section_marker",
       "pattern": "GENERAL NOTES|STRUCTURAL NOTES|FIRE PROTECTION NOTES",
-      "note": "Texas buildings — common section markers for plan sheets"
+      "note": "Texas buildings \u2014 common section markers for plan sheets"
     },
     {
       "hintId": "tx-bldg-ext-002",
-      "appliesTo": ["ENG_LETTER"],
+      "appliesTo": [
+        "ENG_LETTER"
+      ],
       "hintType": "header_pattern",
       "pattern": "RE:|SUBJECT:|PROJECT:",
       "note": "Engineering letter header extraction"
@@ -168,25 +201,38 @@
   "standardVersionPolicy": {
     "entries": [
       {
-        "standardId": "IBC-TX",
+        "standardId": "IBC-TX-TDLR",
         "citationKey": "IBC",
         "currentAdoptedVersion": "2021",
-        "allowedVersions": ["2021", "2018"],
-        "staleBehavior": "STALE_finding"
+        "allowedVersions": [
+          "2021"
+        ],
+        "staleBehavior": "STALE_finding",
+        "_note": "2021 IBC mandatory under TDLR for industrialized/modular buildings statewide, effective July 1 2024. General commercial adoption is local-option; minimum 2012 IBC for municipalities. No statewide general IBC adoption."
       },
       {
         "standardId": "IFC-TX",
         "citationKey": "IFC",
-        "currentAdoptedVersion": "2021",
-        "allowedVersions": ["2021", "2018"],
-        "staleBehavior": "STALE_finding"
+        "currentAdoptedVersion": "local-only",
+        "allowedVersions": [
+          "2021",
+          "2018",
+          "2015",
+          "2012"
+        ],
+        "staleBehavior": "warn",
+        "_note": "No statewide IFC adoption in Texas. Enforcement is local jurisdiction responsibility. Engine should flag for confirmation of local jurisdiction version when IFC is cited."
       },
       {
-        "standardId": "IECC-TX",
+        "standardId": "IECC-TX-TDLR",
         "citationKey": "IECC",
-        "currentAdoptedVersion": "2021",
-        "allowedVersions": ["2021"],
-        "staleBehavior": "STALE_finding"
+        "currentAdoptedVersion": "2015",
+        "allowedVersions": [
+          "2021",
+          "2015"
+        ],
+        "staleBehavior": "STALE_finding",
+        "_note": "2015 IECC mandatory under TDLR for industrialized/modular buildings statewide, effective July 1 2024. Local commercial energy code adoption varies."
       }
     ]
   },
@@ -199,6 +245,5 @@
     "STD_REFERENCE",
     "MFR_SUBMITTAL",
     "FIELD_ANNOTATION"
-  ],
-  "_scaffoldNote": "HOLE-EXT-FIXTURE-001 — corpus version entries pending Polk County research data from Perplexity/Grok. standardVersionPolicy entries to be updated with confirmed TX state adoption versions on research return."
+  ]
 }

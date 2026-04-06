@@ -84,7 +84,8 @@
     "buildings": [
       "to-us-tx-state-buildings-v1",
       "to-us-tx-houston-buildings-v1",
-      "to-polk-county-tx-buildings-v1"
+      "to-polk-county-tx-buildings-v1",
+      "to-livingston-tx-buildings-v1"
     ]
   },
   "versionIndex": "1",

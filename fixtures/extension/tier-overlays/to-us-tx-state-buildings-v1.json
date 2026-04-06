@@ -7,16 +7,50 @@
   "supportedTrackFamilies": ["buildings"],
   "corpusFragments": [
     {
-      "corpusId": "tx-hb-1560-fire-sprinkler",
+      "corpusId": "tdlr-ihb-2021-ibc",
       "authority": "primary",
-      "title": "Texas HB 1560 — Fire Sprinkler Requirements for Commercial Buildings",
-      "versionLabel": "TX HB 1560",
+      "title": "TDLR Industrialized Housing and Buildings — 2021 IBC mandatory statewide for industrialized/modular buildings, effective July 1, 2024",
+      "versionLabel": "TDLR IHB 2021 IBC",
       "ownershipPackId": "pack-us-tx-buildings-v1",
-      "citationKey": "TX-HB-1560",
-      "externalReference": "https://capitol.texas.gov"
+      "citationKey": "TDLR-IHB-2021-IBC",
+      "externalReference": "https://www.tdlr.texas.gov/ihb/codes.htm"
+    },
+    {
+      "corpusId": "tdlr-ihb-2015-iecc",
+      "authority": "primary",
+      "title": "TDLR Industrialized Housing and Buildings — 2015 IECC mandatory statewide for industrialized/modular buildings, effective July 1, 2024",
+      "versionLabel": "TDLR IHB 2015 IECC",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "TDLR-IHB-2015-IECC",
+      "externalReference": "https://www.tdlr.texas.gov/ihb/codes.htm"
+    },
+    {
+      "corpusId": "tx-municipal-ibc-minimum",
+      "authority": "reference",
+      "title": "Texas Municipal Building Code Minimum — 2012 IBC minimum for commercial/multifamily; local jurisdictions may adopt later editions. No statewide general adoption.",
+      "versionLabel": "TX Municipal IBC 2012 minimum",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "TX-MUNICIPAL-IBC-MIN",
+      "externalReference": "https://www.iccsafe.org/advocacy/adoptions-map/texas/"
+    },
+    {
+      "corpusId": "tx-no-statewide-ifc",
+      "authority": "reference",
+      "title": "Texas — No statewide IFC adoption. Fire code enforcement is local jurisdiction responsibility. County fire marshals conduct plan review under locally adopted or referenced codes.",
+      "versionLabel": "TX IFC local only",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "TX-IFC-LOCAL-ONLY",
+      "externalReference": "https://www.iccsafe.org/advocacy/adoptions-map/texas/"
     }
   ],
-  "hierarchyFragments": [],
+  "hierarchyFragments": [
+    {
+      "hierarchyId": "tx-state-tdlr-over-local",
+      "description": "TDLR industrialized building mandate governs over locally cited code versions for modular/industrialized construction",
+      "higher": "STD_REFERENCE",
+      "lower": "ENG_LETTER"
+    }
+  ],
   "contradictionPatternFragments": [
     {
       "patternId": "tx-state-cert-vs-plan",
@@ -24,14 +58,21 @@
       "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
       "parameterKeys": ["fire_rating", "assembly_condition"],
       "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-state-industrialized-vs-cited",
+      "description": "For industrialized/modular buildings: cited code version in documents vs TDLR-mandated 2021 IBC",
+      "docClasses": ["ENG_LETTER", "STD_REFERENCE"],
+      "parameterKeys": ["standard_version"],
+      "severityDefault": "high"
     }
   ],
-  "versionIndex": "1",
-  "effectiveFrom": "2024-01-01",
+  "versionIndex": "2",
+  "effectiveFrom": "2024-07-01",
   "governanceLifecycle": "active",
   "provenance": {
     "sourceOwner": "Lake Area LLC",
     "approvalPath": "internal-fixture",
-    "lineageRef": "cers-extension-fixture-v1"
+    "lineageRef": "research-confirmed-2026-04-06-grok-perplexity"
   }
 }

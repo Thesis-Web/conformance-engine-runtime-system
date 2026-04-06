@@ -8,28 +8,62 @@
   "supportedTrackFamilies": ["buildings"],
   "corpusFragments": [
     {
-      "corpusId": "polk-county-tx-adopted-ibc",
+      "corpusId": "polk-county-tx-fire-marshal-plan-review",
       "authority": "primary",
-      "title": "Polk County TX — Adopted Building Code (pending confirmation from county records)",
-      "versionLabel": "IBC-TX-POLK-PENDING",
+      "title": "Polk County Fire Marshal — Mandatory commercial development plan review authority for unincorporated Polk County. No specific IBC/IFC edition formally adopted or published by the county.",
+      "versionLabel": "Polk County Fire Marshal 2024",
       "ownershipPackId": "pack-us-tx-buildings-v1",
-      "citationKey": "POLK-TX-IBC",
-      "_scaffoldNote": "Version and local amendment status to be confirmed from Perplexity/Grok research return. Replace versionLabel and externalReference on data receipt."
+      "citationKey": "POLK-TX-FIRE-MARSHAL",
+      "externalReference": "https://www.polktx.gov/325/Permits"
+    },
+    {
+      "corpusId": "polk-county-tx-permit-dept",
+      "authority": "primary",
+      "title": "Polk County Permit Department — Commercial and residential development permits for unincorporated Polk County. Address: 602 E Church St Suite 141, Livingston TX 77351.",
+      "versionLabel": "Polk County Permit Dept 2024",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "POLK-TX-PERMIT-DEPT",
+      "externalReference": "https://www.polktx.gov/325/Permits"
+    },
+    {
+      "corpusId": "polk-county-tx-floodplain",
+      "authority": "primary",
+      "title": "Polk County Floodplain Administration — Elevation certificates and floodplain development permits required for development in mapped flood hazard areas.",
+      "versionLabel": "Polk County Floodplain 2024",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "POLK-TX-FLOODPLAIN",
+      "externalReference": "https://www.polktx.gov/366/County-Regulations"
+    },
+    {
+      "corpusId": "polk-county-tx-ossf",
+      "authority": "reference",
+      "title": "Polk County OSSF/Septic — Polk County Health and Safety Code Order governing on-site sewage facilities. Required for development outside municipal sewer service areas.",
+      "versionLabel": "Polk County OSSF 2024",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "POLK-TX-OSSF",
+      "externalReference": "https://www.polktx.gov/366/County-Regulations"
     }
   ],
   "hierarchyFragments": [],
-  "contradictionPatternFragments": [],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "polk-county-no-adopted-code-ambiguity",
+      "description": "Polk County (unincorporated) has not formally published an adopted IBC/IFC edition. Any project document citing a specific code version for unincorporated Polk County work should be flagged — governing code version must be confirmed with the Polk County Fire Marshal before compliance determination.",
+      "docClasses": ["ENG_LETTER", "STD_REFERENCE"],
+      "parameterKeys": ["standard_version"],
+      "severityDefault": "high"
+    }
+  ],
   "versionIndex": "1",
   "effectiveFrom": "2024-01-01",
-  "governanceLifecycle": "candidate",
+  "governanceLifecycle": "active",
   "eligibilityBases": [
     "municipality_adds_governing_standards"
   ],
   "provenance": {
     "sourceOwner": "Lake Area LLC",
-    "approvalPath": "internal-fixture-pending-research",
-    "lineageRef": "HOLE-EXT-FIXTURE-001 — Polk County TX first municipality fixture",
+    "approvalPath": "internal-fixture",
+    "lineageRef": "research-confirmed-2026-04-06-grok-perplexity",
     "submittedBy": "cers-builder-session-2026-04-06"
-  },
-  "_scaffoldNote": "governanceLifecycle set to candidate until research data confirms local amendment authority. On research return: update corpusFragments with confirmed code versions, set governanceLifecycle to active, remove _scaffoldNote fields."
+  }
 }

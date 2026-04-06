@@ -7,7 +7,7 @@
     {
       "corpusId": "ashrae-thermal-2021",
       "authority": "primary",
-      "title": "ASHRAE Thermal Guidelines for Data Processing Environments — 2021",
+      "title": "ASHRAE Thermal Guidelines for Data Processing Environments \u2014 2021",
       "versionLabel": "ASHRAE Thermal 2021",
       "ownershipPackId": "pack-us-tx-datacenter-v1",
       "citationKey": "ASHRAE-THERMAL-2021",
@@ -16,7 +16,7 @@
     {
       "corpusId": "nfpa-75-2020",
       "authority": "primary",
-      "title": "NFPA 75 — Standard for the Fire Protection of Information Technology Equipment 2020",
+      "title": "NFPA 75 \u2014 Standard for the Fire Protection of Information Technology Equipment 2020",
       "versionLabel": "NFPA 75-2020",
       "ownershipPackId": "pack-us-tx-datacenter-v1",
       "citationKey": "NFPA-75-2020",
@@ -25,7 +25,7 @@
     {
       "corpusId": "nfpa-76-2020",
       "authority": "primary",
-      "title": "NFPA 76 — Standard for the Fire Protection of Telecommunications Facilities 2020",
+      "title": "NFPA 76 \u2014 Standard for the Fire Protection of Telecommunications Facilities 2020",
       "versionLabel": "NFPA 76-2020",
       "ownershipPackId": "pack-us-tx-datacenter-v1",
       "citationKey": "NFPA-76-2020",
@@ -34,7 +34,7 @@
     {
       "corpusId": "tx-ifc-2021-dc",
       "authority": "primary",
-      "title": "International Fire Code 2021 — Texas adoption, data center / IT equipment provisions",
+      "title": "International Fire Code 2021 \u2014 Texas adoption, data center / IT equipment provisions",
       "versionLabel": "IFC 2021",
       "ownershipPackId": "pack-us-tx-datacenter-v1",
       "citationKey": "IFC-2021-TX-DC",
@@ -43,7 +43,7 @@
     {
       "corpusId": "uptime-tier-standard",
       "authority": "reference",
-      "title": "Uptime Institute — Tier Standard: Topology (reference)",
+      "title": "Uptime Institute \u2014 Tier Standard: Topology (reference)",
       "versionLabel": "Uptime Tier 2022",
       "ownershipPackId": "pack-us-tx-datacenter-v1",
       "citationKey": "UPTIME-TIER-2022",
@@ -69,14 +69,14 @@
       "ruleId": "tx-dc-cm-003",
       "docClass": "TEST_REPORT",
       "matchCriteria": "filename contains test OR report OR performance OR thermal OR load",
-      "confidence": 0.80,
+      "confidence": 0.8,
       "priority": 3
     },
     {
       "ruleId": "tx-dc-cm-004",
       "docClass": "MFR_SUBMITTAL",
       "matchCriteria": "filename contains submittal OR manufacturer OR UL OR FM OR certification",
-      "confidence": 0.80,
+      "confidence": 0.8,
       "priority": 4
     },
     {
@@ -112,43 +112,71 @@
     {
       "patternId": "tx-dc-spec-vs-test",
       "description": "Cooling load spec vs equipment tested limits",
-      "docClasses": ["SPEC_SHEET", "TEST_REPORT"],
-      "parameterKeys": ["cooling_class", "equipment_model"],
+      "docClasses": [
+        "SPEC_SHEET",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "cooling_class",
+        "equipment_model"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-plan-vs-spec",
       "description": "Design plan equipment schedule vs spec sheet rated conditions",
-      "docClasses": ["DESIGN_PLANS", "SPEC_SHEET"],
-      "parameterKeys": ["equipment_model", "cooling_class"],
+      "docClasses": [
+        "DESIGN_PLANS",
+        "SPEC_SHEET"
+      ],
+      "parameterKeys": [
+        "equipment_model",
+        "cooling_class"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-submittal-vs-test",
       "description": "FM/UL manufacturer submittal vs tested or certified equipment condition",
-      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
-      "parameterKeys": ["equipment_model", "certification_condition"],
+      "docClasses": [
+        "MFR_SUBMITTAL",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "equipment_model",
+        "certification_condition"
+      ],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-letter-vs-evidence",
       "description": "Engineering letter assertion vs cooling/fire/equipment evidence support",
-      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
-      "parameterKeys": ["engineering_assertion_vs_evidence"],
+      "docClasses": [
+        "ENG_LETTER",
+        "TEST_REPORT"
+      ],
+      "parameterKeys": [
+        "engineering_assertion_vs_evidence"
+      ],
       "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
     {
       "hintId": "tx-dc-ext-001",
-      "appliesTo": ["SPEC_SHEET", "TEST_REPORT"],
+      "appliesTo": [
+        "SPEC_SHEET",
+        "TEST_REPORT"
+      ],
       "hintType": "field_locator",
       "pattern": "ASHRAE Class|Operating Temperature|Inlet Temperature|Cooling Capacity|PUE",
       "note": "Data center thermal and efficiency parameter extraction"
     },
     {
       "hintId": "tx-dc-ext-002",
-      "appliesTo": ["MFR_SUBMITTAL"],
+      "appliesTo": [
+        "MFR_SUBMITTAL"
+      ],
       "hintType": "field_locator",
       "pattern": "UL Listing|FM Approval|Suppression System|Sprinkler Type",
       "note": "Fire protection certification field extraction"
@@ -160,21 +188,30 @@
         "standardId": "NFPA-75",
         "citationKey": "NFPA-75",
         "currentAdoptedVersion": "2020",
-        "allowedVersions": ["2020", "2017"],
+        "allowedVersions": [
+          "2020",
+          "2017"
+        ],
         "staleBehavior": "STALE_finding"
       },
       {
         "standardId": "NFPA-76",
         "citationKey": "NFPA-76",
         "currentAdoptedVersion": "2020",
-        "allowedVersions": ["2020", "2017"],
+        "allowedVersions": [
+          "2020",
+          "2017"
+        ],
         "staleBehavior": "STALE_finding"
       },
       {
         "standardId": "ASHRAE-THERMAL",
         "citationKey": "ASHRAE-THERMAL",
         "currentAdoptedVersion": "2021",
-        "allowedVersions": ["2021", "2015"],
+        "allowedVersions": [
+          "2021",
+          "2015"
+        ],
         "staleBehavior": "STALE_finding"
       }
     ]
@@ -186,6 +223,5 @@
     "ENG_LETTER",
     "DESIGN_PLANS",
     "STD_REFERENCE"
-  ],
-  "_scaffoldNote": "HOLE-EXT-FIXTURE-001 — NFPA/IFC version entries to be confirmed against Polk County TX IFC adoption on research return."
+  ]
 }

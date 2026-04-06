@@ -1,0 +1,78 @@
+{
+  "tierOverlayId": "to-livingston-tx-buildings-v1",
+  "tierType": "municipal",
+  "tierId": "US-TX-LIVINGSTON",
+  "parentTierId": "US-TX",
+  "jurisdictionFamilyId": "us_state_local_v1",
+  "jurisdictionId": "US-TX",
+  "supportedTrackFamilies": ["buildings"],
+  "corpusFragments": [
+    {
+      "corpusId": "livingston-tx-ibc-2018",
+      "authority": "primary",
+      "title": "City of Livingston TX — 2018 International Building Code, adopted per official city code document updated 9/24/2020",
+      "versionLabel": "Livingston IBC 2018",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "LIVINGSTON-TX-IBC-2018",
+      "externalReference": "https://www.cityoflivingston-tx.com/DocumentCenter/View/707/Codes-Used-by-the-City-of-Livingston-Texas---Updated-9242020"
+    },
+    {
+      "corpusId": "livingston-tx-ifc-2018",
+      "authority": "primary",
+      "title": "City of Livingston TX — 2018 International Fire Code, adopted per official city code document updated 9/24/2020",
+      "versionLabel": "Livingston IFC 2018",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "LIVINGSTON-TX-IFC-2018",
+      "externalReference": "https://www.cityoflivingston-tx.com/DocumentCenter/View/707/Codes-Used-by-the-City-of-Livingston-Texas---Updated-9242020"
+    },
+    {
+      "corpusId": "livingston-tx-ipc-2018",
+      "authority": "reference",
+      "title": "City of Livingston TX — 2018 International Plumbing Code, adopted 9/24/2020",
+      "versionLabel": "Livingston IPC 2018",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "LIVINGSTON-TX-IPC-2018",
+      "externalReference": "https://www.cityoflivingston-tx.com/DocumentCenter/View/707/Codes-Used-by-the-City-of-Livingston-Texas---Updated-9242020"
+    },
+    {
+      "corpusId": "livingston-tx-imc-2018",
+      "authority": "reference",
+      "title": "City of Livingston TX — 2018 International Mechanical Code, adopted 9/24/2020",
+      "versionLabel": "Livingston IMC 2018",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "LIVINGSTON-TX-IMC-2018",
+      "externalReference": "https://www.cityoflivingston-tx.com/DocumentCenter/View/707/Codes-Used-by-the-City-of-Livingston-Texas---Updated-9242020"
+    },
+    {
+      "corpusId": "livingston-tx-nec-2020",
+      "authority": "reference",
+      "title": "City of Livingston TX — 2020 National Electrical Code, adopted 9/24/2020",
+      "versionLabel": "Livingston NEC 2020",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "LIVINGSTON-TX-NEC-2020",
+      "externalReference": "https://www.cityoflivingston-tx.com/DocumentCenter/View/707/Codes-Used-by-the-City-of-Livingston-Texas---Updated-9242020"
+    }
+  ],
+  "hierarchyFragments": [],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "livingston-ibc-version-check",
+      "description": "City of Livingston TX governing code is 2018 IBC/IFC. Documents citing 2021 or later for Livingston city limits work should be flagged as potentially stale-forward — Livingston has not confirmed adoption of post-2018 editions.",
+      "docClasses": ["ENG_LETTER", "STD_REFERENCE"],
+      "parameterKeys": ["standard_version"],
+      "severityDefault": "medium"
+    }
+  ],
+  "versionIndex": "1",
+  "effectiveFrom": "2020-09-24",
+  "governanceLifecycle": "active",
+  "eligibilityBases": [
+    "municipality_adds_governing_standards"
+  ],
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "approvalPath": "internal-fixture",
+    "lineageRef": "research-confirmed-2026-04-06-grok-perplexity",
+    "submittedBy": "cers-builder-session-2026-04-06"
+  }
+}
