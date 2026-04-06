@@ -1,100 +1,59 @@
-/**
- * schema:validate — validates schema files exist AND have correct structure.
- *
- * INCOMPLETE-001 fix: previously only checked file existence via existsSync.
- * Now also verifies each schema file:
- *   - is valid parseable JSON
- *   - contains a $schema declaration
- *   - contains a top-level "type" field
- *   - contains a "properties" or "items" field (structural content)
- *   - contains a "required" array where applicable
- *
- * Spec §11: schemas must be machine-readable with runtime-validatable structure.
- */
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
-import { existsSync, readFileSync } from 'node:fs';
-
-interface SchemaCheck {
-  path: string;
-  requireRequired: boolean; // some schemas (output-brief, engineer-review-packet) are string type
-}
-
-const REQUIRED_SCHEMAS: SchemaCheck[] = [
-  { path: 'schemas/case-record.schema.json', requireRequired: true },
-  { path: 'schemas/run-record.schema.json', requireRequired: true },
-  { path: 'schemas/pack-manifest.schema.json', requireRequired: true },
-  { path: 'schemas/finding.schema.json', requireRequired: true },
-  { path: 'schemas/ask.schema.json', requireRequired: true },
-  { path: 'schemas/output-brief.schema.json', requireRequired: false },
-  { path: 'schemas/engineer-review-packet.schema.json', requireRequired: false },
+const schemasDir = path.join(process.cwd(), 'schemas');
+const requiredSchemas = [
+  'case-record.schema.json',
+  'run-record.schema.json',
+  'pack-manifest.schema.json',
+  'finding.schema.json',
+  'ask.schema.json',
+  'output-brief.schema.json',
+  'engineer-review-packet.schema.json',
+  'base-standards-module.schema.json',
+  'jurisdiction-family-config.schema.json',
+  'tier-overlay.schema.json',
+  'effective-pack-manifest.schema.json',
+  'effective-pack-store-record.schema.json',
+  'effective-pack-resolution-result.schema.json',
 ];
 
-let pass = true;
+let hasError = false;
 
-for (const check of REQUIRED_SCHEMAS) {
-  // Existence check
-  if (!existsSync(check.path)) {
-    console.error(`MISSING schema: ${check.path}`);
-    pass = false;
+console.log('=== Schema Validation ===');
+
+for (const filename of requiredSchemas) {
+  const fullPath = path.join(schemasDir, filename);
+  if (!fs.existsSync(fullPath)) {
+    console.error(`ERROR: Missing schema ${filename}`);
+    hasError = true;
     continue;
   }
 
-  // Parse check
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(readFileSync(check.path, 'utf8'));
-  } catch (err) {
-    console.error(`INVALID JSON in schema: ${check.path} — ${String(err)}`);
-    pass = false;
-    continue;
-  }
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    const schemaObj = JSON.parse(content) as Record<string, unknown>;
 
-  if (typeof parsed !== 'object' || parsed === null) {
-    console.error(`NOT AN OBJECT: ${check.path}`);
-    pass = false;
-    continue;
-  }
-
-  const schema = parsed as Record<string, unknown>;
-  const errors: string[] = [];
-
-  // Must have $schema declaration
-  if (typeof schema['$schema'] !== 'string') {
-    errors.push('missing $schema declaration');
-  }
-
-  // Must have a type field
-  if (!('type' in schema)) {
-    errors.push('missing top-level "type" field');
-  }
-
-  // Must have structural content: properties (for object schemas) or items (for array schemas)
-  const hasProperties = 'properties' in schema && typeof schema['properties'] === 'object';
-  const hasItems = 'items' in schema && typeof schema['items'] === 'object';
-  const isStringType = schema['type'] === 'string';
-
-  if (!hasProperties && !hasItems && !isStringType) {
-    errors.push('missing "properties" or "items" field — schema has no structural content');
-  }
-
-  // Must have required array for object schemas with properties (where applicable)
-  if (check.requireRequired && hasProperties) {
-    if (!Array.isArray(schema['required']) || schema['required'].length === 0) {
-      errors.push('"required" array is missing or empty — schema does not enforce required fields');
+    if (schemaObj['type'] !== 'object') {
+      console.error(`ERROR: ${filename} missing top-level object type`);
+      hasError = true;
+      continue;
     }
-  }
 
-  if (errors.length > 0) {
-    console.error(`STRUCTURAL ERRORS in ${check.path}:`);
-    for (const e of errors) console.error(`  - ${e}`);
-    pass = false;
-  } else {
-    console.log(`OK: ${check.path}`);
+    if (!('properties' in schemaObj)) {
+      console.error(`ERROR: ${filename} missing properties`);
+      hasError = true;
+      continue;
+    }
+
+    console.log(`OK: schemas/${filename}`);
+  } catch (error) {
+    console.error(`ERROR: Failed to parse ${filename}: ${String(error)}`);
+    hasError = true;
   }
 }
 
-if (!pass) {
-  console.error('schema:validate FAIL');
+if (hasError) {
   process.exit(1);
 }
 

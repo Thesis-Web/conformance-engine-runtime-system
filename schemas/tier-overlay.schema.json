@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:tier-overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tierOverlayId",
+    "tierType",
+    "tierId",
+    "jurisdictionFamilyId",
+    "jurisdictionId",
+    "supportedTrackFamilies",
+    "corpusFragments",
+    "hierarchyFragments",
+    "contradictionPatternFragments",
+    "versionIndex",
+    "effectiveFrom",
+    "provenance",
+    "governanceLifecycle"
+  ],
+  "properties": {
+    "tierOverlayId": { "type": "string" },
+    "tierType": {
+      "type": "string",
+      "enum": [
+        "supranational",
+        "national",
+        "state_or_member_state",
+        "regional",
+        "municipal",
+        "local_authority"
+      ]
+    },
+    "tierId": { "type": "string" },
+    "parentTierId": { "type": "string" },
+    "jurisdictionFamilyId": { "type": "string" },
+    "jurisdictionId": { "type": "string" },
+    "supportedTrackFamilies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "corpusFragments": { "type": "array" },
+    "hierarchyFragments": { "type": "array" },
+    "contradictionPatternFragments": { "type": "array" },
+    "versionIndex": { "type": "string", "minLength": 1 },
+    "effectiveFrom": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "effectiveTo": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceOwner", "approvalPath", "lineageRef"],
+      "properties": {
+        "sourceOwner": { "type": "string", "minLength": 1 },
+        "approvalPath": { "type": "string", "minLength": 1 },
+        "lineageRef": { "type": "string", "minLength": 1 },
+        "submittedBy": { "type": "string" }
+      }
+    },
+    "eligibilityBases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "track_requires_municipality",
+          "municipality_adds_governing_standards",
+          "municipality_adds_hierarchy_or_contradiction_behavior",
+          "municipality_materially_changes_applicability"
+        ]
+      }
+    },
+    "governanceLifecycle": {
+      "type": "string",
+      "enum": ["candidate", "validated", "approved", "active", "deprecated"]
+    }
+  }
+}

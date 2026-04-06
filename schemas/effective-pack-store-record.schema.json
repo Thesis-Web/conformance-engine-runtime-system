@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:effective-pack-store-record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "effectivePackId",
+    "compositionDigest",
+    "packId",
+    "trackFamilyId",
+    "jurisdictionFamilyId",
+    "jurisdictionId",
+    "tierPath",
+    "governingAsOfDate",
+    "componentIds",
+    "componentDigests",
+    "storedAt",
+    "manifestPath",
+    "compatibilityValidated",
+    "replayValidated"
+  ],
+  "properties": {
+    "effectivePackId": { "type": "string" },
+    "compositionDigest": { "type": "string" },
+    "packId": { "type": "string" },
+    "trackFamilyId": { "type": "string" },
+    "jurisdictionFamilyId": { "type": "string" },
+    "jurisdictionId": { "type": "string" },
+    "tierPath": { "type": "array" },
+    "municipalityId": { "type": "string" },
+    "governingAsOfDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "componentIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "componentDigests": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "storedAt": { "type": "string" },
+    "manifestPath": { "type": "string" },
+    "compatibilityValidated": { "type": "boolean" },
+    "replayValidated": { "type": "boolean" }
+  }
+}

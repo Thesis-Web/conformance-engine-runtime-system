@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:effective-pack-resolution-result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resolved"],
+  "properties": {
+    "resolved": { "type": "boolean" },
+    "effectivePackId": { "type": "string" },
+    "manifestPath": { "type": "string" },
+    "resolutionMethod": {
+      "type": "string",
+      "enum": ["composed_fresh", "reused_precomputed", "replayed_pinned"]
+    },
+    "rejectionCode": { "type": "string" },
+    "rejectionReason": { "type": "string" },
+    "emittedOperatorPrompt": { "type": "boolean" }
+  }
+}

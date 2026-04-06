@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cers:jurisdiction-family-config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "jurisdictionFamilyId",
+    "displayName",
+    "supportedTrackFamilies",
+    "tierOrder",
+    "requiresMunicipalityByTrack",
+    "requiredTierHandlingByTrack",
+    "allowedTierReferencesByTrack",
+    "referencedBaseStandardsModulesByTrack",
+    "referencedTierOverlaysByTrack",
+    "versionIndex",
+    "effectiveFrom"
+  ],
+  "properties": {
+    "jurisdictionFamilyId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*_v[1-9][0-9]*$"
+    },
+    "displayName": { "type": "string", "minLength": 1 },
+    "supportedTrackFamilies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "tierOrder": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "supranational",
+          "national",
+          "state_or_member_state",
+          "regional",
+          "municipal",
+          "local_authority"
+        ]
+      },
+      "minItems": 1
+    },
+    "requiresMunicipalityByTrack": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "requiredTierHandlingByTrack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "trackFamilyId",
+          "requiredTiers",
+          "maximumTier",
+          "allowResolutionAtIntermediateTier"
+        ],
+        "properties": {
+          "trackFamilyId": { "type": "string" },
+          "requiredTiers": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "maximumTier": { "type": "string" },
+          "allowResolutionAtIntermediateTier": { "type": "boolean" }
+        }
+      }
+    },
+    "allowedTierReferencesByTrack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trackFamilyId", "allowedTiers"],
+        "properties": {
+          "trackFamilyId": { "type": "string" },
+          "allowedTiers": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "referencedBaseStandardsModulesByTrack": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "referencedTierOverlaysByTrack": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "versionIndex": { "type": "string", "minLength": 1 },
+    "effectiveFrom": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "effectiveTo": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  }
+}
