@@ -1,0 +1,31 @@
+{
+  "tierOverlayId": "to-us-tx-houston-buildings-v1",
+  "tierType": "municipal",
+  "tierId": "US-TX-HOUSTON",
+  "parentTierId": "US-TX",
+  "jurisdictionFamilyId": "us_state_local_v1",
+  "jurisdictionId": "US-TX",
+  "supportedTrackFamilies": ["buildings"],
+  "corpusFragments": [
+    {
+      "corpusId": "houston-amendments-ibc-2021",
+      "authority": "primary",
+      "title": "City of Houston Local Amendments to IBC 2021",
+      "versionLabel": "Houston IBC 2021 Amendments",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "HOUSTON-IBC-2021-AMEND",
+      "externalReference": "https://www.houstontx.gov/perm/codeamendments.html"
+    }
+  ],
+  "hierarchyFragments": [],
+  "contradictionPatternFragments": [],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "governanceLifecycle": "active",
+  "eligibilityBases": ["municipality_adds_governing_standards"],
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "approvalPath": "internal-fixture",
+    "lineageRef": "cers-extension-fixture-v1"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "baseModuleId": "bsm-us-tx-datacenter-v1",
+  "displayName": "Texas Data Center Base Standards Module v1",
+  "supportedTrackFamilies": ["datacenter"],
+  "corpus": [
+    {
+      "corpusId": "ashrae-thermal-2021",
+      "authority": "primary",
+      "title": "ASHRAE Thermal Guidelines for Data Processing Environments — 2021",
+      "versionLabel": "ASHRAE Thermal 2021",
+      "ownershipPackId": "pack-us-tx-datacenter-v1",
+      "citationKey": "ASHRAE-THERMAL-2021",
+      "externalReference": "https://www.ashrae.org"
+    },
+    {
+      "corpusId": "nfpa-75-2020",
+      "authority": "primary",
+      "title": "NFPA 75 — Standard for the Fire Protection of Information Technology Equipment 2020",
+      "versionLabel": "NFPA 75-2020",
+      "ownershipPackId": "pack-us-tx-datacenter-v1",
+      "citationKey": "NFPA-75-2020",
+      "externalReference": "https://www.nfpa.org/codes-and-standards/7/5/75"
+    },
+    {
+      "corpusId": "nfpa-76-2020",
+      "authority": "primary",
+      "title": "NFPA 76 — Standard for the Fire Protection of Telecommunications Facilities 2020",
+      "versionLabel": "NFPA 76-2020",
+      "ownershipPackId": "pack-us-tx-datacenter-v1",
+      "citationKey": "NFPA-76-2020",
+      "externalReference": "https://www.nfpa.org/codes-and-standards/7/6/76"
+    }
+  ],
+  "hierarchyFragments": [
+    {
+      "hierarchyId": "tx-dc-plans-over-spec",
+      "description": "Design plans govern over spec sheets for datacenter track",
+      "higher": "DESIGN_PLANS",
+      "lower": "SPEC_SHEET"
+    }
+  ],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "tx-dc-spec-vs-test",
+      "description": "Cooling spec vs equipment tested limits",
+      "docClasses": ["SPEC_SHEET", "TEST_REPORT"],
+      "parameterKeys": ["cooling_class", "equipment_model"],
+      "severityDefault": "high"
+    }
+  ],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "ownershipPackId": "pack-us-tx-datacenter-v1",
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "sourceAuthority": "primary",
+    "lineageRef": "cers-extension-fixture-v1"
+  }
+}

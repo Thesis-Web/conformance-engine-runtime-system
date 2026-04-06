@@ -1,0 +1,66 @@
+{
+  "baseModuleId": "bsm-us-tx-buildings-v1",
+  "displayName": "Texas Buildings Base Standards Module v1",
+  "supportedTrackFamilies": ["buildings"],
+  "corpus": [
+    {
+      "corpusId": "tx-ibc-2021",
+      "authority": "primary",
+      "title": "International Building Code 2021 as adopted by Texas",
+      "versionLabel": "IBC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IBC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IBC2021"
+    },
+    {
+      "corpusId": "tx-energy-code-2021",
+      "authority": "primary",
+      "title": "IECC 2021 as adopted by Texas for commercial buildings",
+      "versionLabel": "IECC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IECC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IECC2021"
+    },
+    {
+      "corpusId": "tx-fire-code-2021",
+      "authority": "primary",
+      "title": "International Fire Code 2021 as adopted by Texas",
+      "versionLabel": "IFC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IFC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IFC2021"
+    }
+  ],
+  "hierarchyFragments": [
+    {
+      "hierarchyId": "tx-buildings-plans-over-letter",
+      "description": "Design plans govern over engineering letters for Texas buildings track",
+      "higher": "DESIGN_PLANS",
+      "lower": "ENG_LETTER"
+    }
+  ],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "tx-bldg-plan-vs-test",
+      "description": "Design plan conditions vs test report conditions",
+      "docClasses": ["DESIGN_PLANS", "TEST_REPORT"],
+      "parameterKeys": ["assembly_condition", "fire_rating", "seismic_reference"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-bldg-submittal-vs-test",
+      "description": "Manufacturer submittal vs tested condition",
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "assembly_condition"],
+      "severityDefault": "high"
+    }
+  ],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "ownershipPackId": "pack-us-tx-buildings-v1",
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "sourceAuthority": "primary",
+    "lineageRef": "cers-extension-fixture-v1"
+  }
+}

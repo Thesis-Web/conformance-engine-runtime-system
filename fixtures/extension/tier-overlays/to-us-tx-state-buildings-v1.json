@@ -1,0 +1,37 @@
+{
+  "tierOverlayId": "to-us-tx-state-buildings-v1",
+  "tierType": "state_or_member_state",
+  "tierId": "US-TX",
+  "jurisdictionFamilyId": "us_state_local_v1",
+  "jurisdictionId": "US-TX",
+  "supportedTrackFamilies": ["buildings"],
+  "corpusFragments": [
+    {
+      "corpusId": "tx-hb-1560-fire-sprinkler",
+      "authority": "primary",
+      "title": "Texas HB 1560 — Fire Sprinkler Requirements for Commercial Buildings",
+      "versionLabel": "TX HB 1560",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "TX-HB-1560",
+      "externalReference": "https://capitol.texas.gov"
+    }
+  ],
+  "hierarchyFragments": [],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "tx-state-cert-vs-plan",
+      "description": "Compliance certificate vs design plan statements — Texas state overlay",
+      "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
+      "parameterKeys": ["fire_rating", "assembly_condition"],
+      "severityDefault": "high"
+    }
+  ],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "governanceLifecycle": "active",
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "approvalPath": "internal-fixture",
+    "lineageRef": "cers-extension-fixture-v1"
+  }
+}

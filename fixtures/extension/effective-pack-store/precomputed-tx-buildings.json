@@ -1,0 +1,22 @@
+{
+  "effectivePackId": "epack-us-tx-buildings-v1-55a5a5a5-2025-01-01-abc123def456",
+  "compositionDigest": "abc123def456abc123def456abc123def456abc123def456abc123def456abcd",
+  "packId": "pack-us-tx-buildings-v1",
+  "trackFamilyId": "buildings",
+  "jurisdictionFamilyId": "us_state_local_v1",
+  "jurisdictionId": "US-TX",
+  "tierPath": [
+    { "tierType": "national", "tierId": "US" },
+    { "tierType": "state_or_member_state", "tierId": "US-TX" }
+  ],
+  "governingAsOfDate": "2025-01-01",
+  "componentIds": ["bsm-us-tx-buildings-v1", "to-us-tx-state-buildings-v1"],
+  "componentDigests": [
+    "aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa1111bbbb2222",
+    "1111aaaa2222bbbb3333cccc4444dddd5555eeee6666ffff1111aaaa2222bbbb"
+  ],
+  "storedAt": "2025-01-02T00:00:00.000Z",
+  "manifestPath": "fixtures/extension/effective-pack-store/epack-us-tx-buildings-v1-55a5a5a5-2025-01-01-abc123def456/effective-pack-manifest.json",
+  "compatibilityValidated": true,
+  "replayValidated": true
+}

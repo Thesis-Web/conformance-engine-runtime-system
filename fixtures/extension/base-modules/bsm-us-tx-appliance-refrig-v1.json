@@ -1,0 +1,50 @@
+{
+  "baseModuleId": "bsm-us-tx-appliance-refrig-v1",
+  "displayName": "Texas Appliance and Refrigeration Base Standards Module v1",
+  "supportedTrackFamilies": ["appliance_refrigeration"],
+  "corpus": [
+    {
+      "corpusId": "doe-appendix-aa-2023",
+      "authority": "primary",
+      "title": "DOE Appendix AA — Test Procedure for Residential Room Air Conditioners",
+      "versionLabel": "Appendix AA 2023",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "DOE-AA-2023",
+      "externalReference": "https://www.ecfr.gov/current/title-10/part-430"
+    },
+    {
+      "corpusId": "ahri-standard-210-240-2023",
+      "authority": "secondary",
+      "title": "AHRI Standard 210/240 — Unitary Air-Conditioning and Air-Source Heat Pump Equipment",
+      "versionLabel": "AHRI 210/240-2023",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "AHRI-210-240-2023",
+      "externalReference": "https://www.ahrinet.org"
+    }
+  ],
+  "hierarchyFragments": [
+    {
+      "hierarchyId": "tx-appliance-test-over-submittal",
+      "description": "Test report governs over manufacturer submittal for appliance track",
+      "higher": "TEST_REPORT",
+      "lower": "MFR_SUBMITTAL"
+    }
+  ],
+  "contradictionPatternFragments": [
+    {
+      "patternId": "tx-appliance-submittal-vs-test",
+      "description": "Manufacturer submittal values vs tested condition values",
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "procedure_version", "certification_condition"],
+      "severityDefault": "high"
+    }
+  ],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "sourceAuthority": "primary",
+    "lineageRef": "cers-extension-fixture-v1"
+  }
+}
