@@ -1,0 +1,160 @@
+{
+  "packId": "pack-us-tx-appliance_refrigeration-v1",
+  "versionIndex": "1",
+  "displayName": "Texas Appliance and Refrigeration Pack v1",
+  "jurisdiction": "US-TX",
+  "corpus": [
+    {
+      "corpusId": "doe-appendix-aa-2023",
+      "authority": "primary",
+      "title": "DOE Appendix AA — Test Procedure for Residential Room Air Conditioners (2023)",
+      "versionLabel": "Appendix AA 2023",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "DOE-AA-2023",
+      "externalReference": "https://www.ecfr.gov/current/title-10/part-430"
+    },
+    {
+      "corpusId": "doe-appendix-m1-2023",
+      "authority": "primary",
+      "title": "DOE Appendix M1 — Test Procedure for Central Air Conditioners and Heat Pumps (2023)",
+      "versionLabel": "Appendix M1 2023",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "DOE-M1-2023",
+      "externalReference": "https://www.ecfr.gov/current/title-10/part-430"
+    },
+    {
+      "corpusId": "ahri-210-240-2023",
+      "authority": "secondary",
+      "title": "AHRI Standard 210/240-2023 — Unitary Air-Conditioning and Air-Source Heat Pump Equipment",
+      "versionLabel": "AHRI 210/240-2023",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "AHRI-210-240-2023",
+      "externalReference": "https://www.ahrinet.org"
+    },
+    {
+      "corpusId": "tx-energy-efficiency-regs",
+      "authority": "primary",
+      "title": "Texas SECO Energy Efficiency Standards — Appliance and HVAC",
+      "versionLabel": "TX SECO 2024",
+      "ownershipPackId": "pack-us-tx-appliance_refrigeration-v1",
+      "citationKey": "TX-SECO-2024",
+      "externalReference": "https://www.seco.cpa.texas.gov/programs/appliance/"
+    }
+  ],
+  "classMap": [
+    {
+      "ruleId": "tx-appl-cm-001",
+      "docClass": "SPEC_SHEET",
+      "matchCriteria": "filename contains spec OR specification OR product data OR model",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "tx-appl-cm-002",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "filename contains test OR report OR lab OR performance",
+      "confidence": 0.85,
+      "priority": 2
+    },
+    {
+      "ruleId": "tx-appl-cm-003",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "filename contains submittal OR manufacturer OR certification OR filing",
+      "confidence": 0.80,
+      "priority": 3
+    },
+    {
+      "ruleId": "tx-appl-cm-004",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "filename contains standard OR DOE OR AHRI OR ASHRAE OR procedure",
+      "confidence": 0.75,
+      "priority": 4
+    },
+    {
+      "ruleId": "tx-appl-cm-005",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "filename contains letter OR engineer OR PE OR interpretation",
+      "confidence": 0.75,
+      "priority": 5
+    }
+  ],
+  "hierarchyConfig": [
+    {
+      "hierarchyId": "tx-appl-test-over-submittal",
+      "description": "Test report governs over manufacturer submittal for performance conditions",
+      "higher": "TEST_REPORT",
+      "lower": "MFR_SUBMITTAL"
+    },
+    {
+      "hierarchyId": "tx-appl-std-over-spec",
+      "description": "DOE/AHRI standard governs over spec sheet for procedure version",
+      "higher": "STD_REFERENCE",
+      "lower": "SPEC_SHEET"
+    }
+  ],
+  "contradictionPatterns": [
+    {
+      "patternId": "tx-appl-submittal-vs-test",
+      "description": "Manufacturer submittal values vs tested condition values",
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "procedure_version", "certification_condition"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-appl-spec-vs-test",
+      "description": "Spec sheet rated performance vs test report measured performance",
+      "docClasses": ["SPEC_SHEET", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "certification_condition"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-appl-letter-vs-test",
+      "description": "Engineering letter interpretation vs test report evidence",
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["engineering_assertion_vs_evidence"],
+      "severityDefault": "high"
+    }
+  ],
+  "optionalExtractors": [
+    {
+      "hintId": "tx-appl-ext-001",
+      "appliesTo": ["TEST_REPORT"],
+      "hintType": "field_locator",
+      "pattern": "Model Number|Tested Condition|SEER|EER|COP|Capacity",
+      "note": "Key field extraction for appliance test reports"
+    },
+    {
+      "hintId": "tx-appl-ext-002",
+      "appliesTo": ["MFR_SUBMITTAL"],
+      "hintType": "field_locator",
+      "pattern": "Certification Number|Listed Model|Certification Condition",
+      "note": "Manufacturer submittal certification field extraction"
+    }
+  ],
+  "standardVersionPolicy": {
+    "entries": [
+      {
+        "standardId": "DOE-APPENDIX-AA",
+        "citationKey": "DOE-AA",
+        "currentAdoptedVersion": "2023",
+        "allowedVersions": ["2023", "2017"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "AHRI-210-240",
+        "citationKey": "AHRI-210-240",
+        "currentAdoptedVersion": "2023",
+        "allowedVersions": ["2023", "2017"],
+        "staleBehavior": "STALE_finding"
+      }
+    ]
+  },
+  "supportedDocumentClasses": [
+    "SPEC_SHEET",
+    "TEST_REPORT",
+    "MFR_SUBMITTAL",
+    "STD_REFERENCE",
+    "ENG_LETTER"
+  ],
+  "_scaffoldNote": "HOLE-EXT-FIXTURE-001 — corpus entries to be confirmed against Polk County TX enforcement authority on research return."
+}

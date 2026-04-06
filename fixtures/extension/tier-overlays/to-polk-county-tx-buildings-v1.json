@@ -1,0 +1,35 @@
+{
+  "tierOverlayId": "to-polk-county-tx-buildings-v1",
+  "tierType": "municipal",
+  "tierId": "US-TX-POLK",
+  "parentTierId": "US-TX",
+  "jurisdictionFamilyId": "us_state_local_v1",
+  "jurisdictionId": "US-TX",
+  "supportedTrackFamilies": ["buildings"],
+  "corpusFragments": [
+    {
+      "corpusId": "polk-county-tx-adopted-ibc",
+      "authority": "primary",
+      "title": "Polk County TX — Adopted Building Code (pending confirmation from county records)",
+      "versionLabel": "IBC-TX-POLK-PENDING",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "POLK-TX-IBC",
+      "_scaffoldNote": "Version and local amendment status to be confirmed from Perplexity/Grok research return. Replace versionLabel and externalReference on data receipt."
+    }
+  ],
+  "hierarchyFragments": [],
+  "contradictionPatternFragments": [],
+  "versionIndex": "1",
+  "effectiveFrom": "2024-01-01",
+  "governanceLifecycle": "candidate",
+  "eligibilityBases": [
+    "municipality_adds_governing_standards"
+  ],
+  "provenance": {
+    "sourceOwner": "Lake Area LLC",
+    "approvalPath": "internal-fixture-pending-research",
+    "lineageRef": "HOLE-EXT-FIXTURE-001 — Polk County TX first municipality fixture",
+    "submittedBy": "cers-builder-session-2026-04-06"
+  },
+  "_scaffoldNote": "governanceLifecycle set to candidate until research data confirms local amendment authority. On research return: update corpusFragments with confirmed code versions, set governanceLifecycle to active, remove _scaffoldNote fields."
+}

@@ -1,8 +1,16 @@
 {
   "jurisdictionFamilyId": "us_state_local_v1",
   "displayName": "US State and Local Jurisdiction Family (v1)",
-  "supportedTrackFamilies": ["buildings", "appliance_refrigeration", "datacenter"],
-  "tierOrder": ["national", "state_or_member_state", "municipal"],
+  "supportedTrackFamilies": [
+    "buildings",
+    "appliance_refrigeration",
+    "datacenter"
+  ],
+  "tierOrder": [
+    "national",
+    "state_or_member_state",
+    "municipal"
+  ],
   "requiresMunicipalityByTrack": {
     "buildings": false,
     "appliance_refrigeration": false,
@@ -11,19 +19,28 @@
   "requiredTierHandlingByTrack": [
     {
       "trackFamilyId": "buildings",
-      "requiredTiers": ["national", "state_or_member_state"],
+      "requiredTiers": [
+        "national",
+        "state_or_member_state"
+      ],
       "maximumTier": "state_or_member_state",
       "allowResolutionAtIntermediateTier": true
     },
     {
       "trackFamilyId": "appliance_refrigeration",
-      "requiredTiers": ["national", "state_or_member_state"],
+      "requiredTiers": [
+        "national",
+        "state_or_member_state"
+      ],
       "maximumTier": "state_or_member_state",
       "allowResolutionAtIntermediateTier": true
     },
     {
       "trackFamilyId": "datacenter",
-      "requiredTiers": ["national", "state_or_member_state"],
+      "requiredTiers": [
+        "national",
+        "state_or_member_state"
+      ],
       "maximumTier": "state_or_member_state",
       "allowResolutionAtIntermediateTier": true
     }
@@ -31,24 +48,44 @@
   "allowedTierReferencesByTrack": [
     {
       "trackFamilyId": "buildings",
-      "allowedTiers": ["national", "state_or_member_state", "municipal"]
+      "allowedTiers": [
+        "national",
+        "state_or_member_state",
+        "municipal"
+      ]
     },
     {
       "trackFamilyId": "appliance_refrigeration",
-      "allowedTiers": ["national", "state_or_member_state"]
+      "allowedTiers": [
+        "national",
+        "state_or_member_state"
+      ]
     },
     {
       "trackFamilyId": "datacenter",
-      "allowedTiers": ["national", "state_or_member_state"]
+      "allowedTiers": [
+        "national",
+        "state_or_member_state"
+      ]
     }
   ],
   "referencedBaseStandardsModulesByTrack": {
-    "buildings": ["bsm-us-tx-buildings-v1"],
-    "appliance_refrigeration": ["bsm-us-tx-appliance-refrig-v1"],
-    "datacenter": ["bsm-us-tx-datacenter-v1"]
+    "buildings": [
+      "bsm-us-tx-buildings-v1"
+    ],
+    "appliance_refrigeration": [
+      "bsm-us-tx-appliance-refrig-v1"
+    ],
+    "datacenter": [
+      "bsm-us-tx-datacenter-v1"
+    ]
   },
   "referencedTierOverlaysByTrack": {
-    "buildings": ["to-us-tx-state-buildings-v1", "to-us-tx-houston-buildings-v1"]
+    "buildings": [
+      "to-us-tx-state-buildings-v1",
+      "to-us-tx-houston-buildings-v1",
+      "to-polk-county-tx-buildings-v1"
+    ]
   },
   "versionIndex": "1",
   "effectiveFrom": "2024-01-01"

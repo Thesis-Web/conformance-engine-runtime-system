@@ -1,0 +1,204 @@
+{
+  "packId": "pack-us-tx-buildings-v1",
+  "versionIndex": "1",
+  "displayName": "Texas Buildings Pack v1",
+  "jurisdiction": "US-TX",
+  "corpus": [
+    {
+      "corpusId": "tx-ibc-2021",
+      "authority": "primary",
+      "title": "International Building Code 2021 as adopted by Texas",
+      "versionLabel": "IBC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IBC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IBC2021"
+    },
+    {
+      "corpusId": "tx-ifc-2021",
+      "authority": "primary",
+      "title": "International Fire Code 2021 as adopted by Texas",
+      "versionLabel": "IFC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IFC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IFC2021"
+    },
+    {
+      "corpusId": "tx-iecc-2021",
+      "authority": "primary",
+      "title": "International Energy Conservation Code 2021 — Texas commercial buildings",
+      "versionLabel": "IECC 2021",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IECC-2021-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IECC2021"
+    },
+    {
+      "corpusId": "tx-ibc-2015",
+      "authority": "reference",
+      "title": "International Building Code 2015 — Texas prior adoption (reference only)",
+      "versionLabel": "IBC 2015",
+      "ownershipPackId": "pack-us-tx-buildings-v1",
+      "citationKey": "IBC-2015-TX",
+      "externalReference": "https://codes.iccsafe.org/content/IBC2015"
+    }
+  ],
+  "classMap": [
+    {
+      "ruleId": "tx-bldg-cm-001",
+      "docClass": "DESIGN_PLANS",
+      "matchCriteria": "filename contains plan OR drawing OR floor plan OR site plan",
+      "confidence": 0.85,
+      "priority": 1
+    },
+    {
+      "ruleId": "tx-bldg-cm-002",
+      "docClass": "TEST_REPORT",
+      "matchCriteria": "filename contains test OR report OR lab OR inspection",
+      "confidence": 0.80,
+      "priority": 2
+    },
+    {
+      "ruleId": "tx-bldg-cm-003",
+      "docClass": "ENG_LETTER",
+      "matchCriteria": "filename contains letter OR engineer OR PE OR stamped",
+      "confidence": 0.80,
+      "priority": 3
+    },
+    {
+      "ruleId": "tx-bldg-cm-004",
+      "docClass": "COMPLIANCE_CERT",
+      "matchCriteria": "filename contains certificate OR cert OR compliance",
+      "confidence": 0.80,
+      "priority": 4
+    },
+    {
+      "ruleId": "tx-bldg-cm-005",
+      "docClass": "MFR_SUBMITTAL",
+      "matchCriteria": "filename contains submittal OR manufacturer OR product data",
+      "confidence": 0.75,
+      "priority": 5
+    },
+    {
+      "ruleId": "tx-bldg-cm-006",
+      "docClass": "STD_REFERENCE",
+      "matchCriteria": "filename contains standard OR code OR IBC OR NFPA OR IECC",
+      "confidence": 0.75,
+      "priority": 6
+    },
+    {
+      "ruleId": "tx-bldg-cm-007",
+      "docClass": "FIELD_ANNOTATION",
+      "matchCriteria": "filename contains field OR annotation OR redline OR markup OR RFI",
+      "confidence": 0.70,
+      "priority": 7
+    }
+  ],
+  "hierarchyConfig": [
+    {
+      "hierarchyId": "tx-bldg-plans-over-letter",
+      "description": "Design plans govern over engineering letters",
+      "higher": "DESIGN_PLANS",
+      "lower": "ENG_LETTER"
+    },
+    {
+      "hierarchyId": "tx-bldg-test-over-submittal",
+      "description": "Test reports govern over manufacturer submittals for assembly conditions",
+      "higher": "TEST_REPORT",
+      "lower": "MFR_SUBMITTAL"
+    },
+    {
+      "hierarchyId": "tx-bldg-std-over-plans",
+      "description": "Governing standard governs over design plans for code compliance parameters",
+      "higher": "STD_REFERENCE",
+      "lower": "DESIGN_PLANS"
+    }
+  ],
+  "contradictionPatterns": [
+    {
+      "patternId": "tx-bldg-plan-vs-test",
+      "description": "Design plan assembly/fire conditions vs test report results",
+      "docClasses": ["DESIGN_PLANS", "TEST_REPORT"],
+      "parameterKeys": ["assembly_condition", "fire_rating", "seismic_reference"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-bldg-letter-vs-test",
+      "description": "Engineering letter assertion vs test report evidence support",
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["engineering_assertion_vs_evidence"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-bldg-submittal-vs-test",
+      "description": "Manufacturer submittal vs tested assembly condition",
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "assembly_condition"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-bldg-cert-vs-plan",
+      "description": "Compliance certificate field vs design plan statement",
+      "docClasses": ["COMPLIANCE_CERT", "DESIGN_PLANS"],
+      "parameterKeys": ["fire_rating", "assembly_condition"],
+      "severityDefault": "high"
+    },
+    {
+      "patternId": "tx-bldg-annotation-vs-plan",
+      "description": "Field annotation vs formal plan requirement",
+      "docClasses": ["FIELD_ANNOTATION", "DESIGN_PLANS"],
+      "parameterKeys": ["assembly_condition"],
+      "severityDefault": "medium"
+    }
+  ],
+  "optionalExtractors": [
+    {
+      "hintId": "tx-bldg-ext-001",
+      "appliesTo": ["DESIGN_PLANS"],
+      "hintType": "section_marker",
+      "pattern": "GENERAL NOTES|STRUCTURAL NOTES|FIRE PROTECTION NOTES",
+      "note": "Texas buildings — common section markers for plan sheets"
+    },
+    {
+      "hintId": "tx-bldg-ext-002",
+      "appliesTo": ["ENG_LETTER"],
+      "hintType": "header_pattern",
+      "pattern": "RE:|SUBJECT:|PROJECT:",
+      "note": "Engineering letter header extraction"
+    }
+  ],
+  "standardVersionPolicy": {
+    "entries": [
+      {
+        "standardId": "IBC-TX",
+        "citationKey": "IBC",
+        "currentAdoptedVersion": "2021",
+        "allowedVersions": ["2021", "2018"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "IFC-TX",
+        "citationKey": "IFC",
+        "currentAdoptedVersion": "2021",
+        "allowedVersions": ["2021", "2018"],
+        "staleBehavior": "STALE_finding"
+      },
+      {
+        "standardId": "IECC-TX",
+        "citationKey": "IECC",
+        "currentAdoptedVersion": "2021",
+        "allowedVersions": ["2021"],
+        "staleBehavior": "STALE_finding"
+      }
+    ]
+  },
+  "supportedDocumentClasses": [
+    "COMPLIANCE_CERT",
+    "DESIGN_PLANS",
+    "SPEC_SHEET",
+    "TEST_REPORT",
+    "ENG_LETTER",
+    "STD_REFERENCE",
+    "MFR_SUBMITTAL",
+    "FIELD_ANNOTATION"
+  ],
+  "_scaffoldNote": "HOLE-EXT-FIXTURE-001 — corpus version entries pending Polk County research data from Perplexity/Grok. standardVersionPolicy entries to be updated with confirmed TX state adoption versions on research return."
+}
