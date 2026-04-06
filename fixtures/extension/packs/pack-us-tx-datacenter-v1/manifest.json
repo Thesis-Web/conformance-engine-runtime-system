@@ -112,71 +112,43 @@
     {
       "patternId": "tx-dc-spec-vs-test",
       "description": "Cooling load spec vs equipment tested limits",
-      "docClasses": [
-        "SPEC_SHEET",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "cooling_class",
-        "equipment_model"
-      ],
+      "docClasses": ["SPEC_SHEET", "TEST_REPORT"],
+      "parameterKeys": ["cooling_class", "equipment_model"],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-plan-vs-spec",
       "description": "Design plan equipment schedule vs spec sheet rated conditions",
-      "docClasses": [
-        "DESIGN_PLANS",
-        "SPEC_SHEET"
-      ],
-      "parameterKeys": [
-        "equipment_model",
-        "cooling_class"
-      ],
+      "docClasses": ["DESIGN_PLANS", "SPEC_SHEET"],
+      "parameterKeys": ["equipment_model", "cooling_class"],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-submittal-vs-test",
       "description": "FM/UL manufacturer submittal vs tested or certified equipment condition",
-      "docClasses": [
-        "MFR_SUBMITTAL",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "equipment_model",
-        "certification_condition"
-      ],
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "certification_condition"],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-dc-letter-vs-evidence",
       "description": "Engineering letter assertion vs cooling/fire/equipment evidence support",
-      "docClasses": [
-        "ENG_LETTER",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "engineering_assertion_vs_evidence"
-      ],
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["engineering_assertion_vs_evidence"],
       "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
     {
       "hintId": "tx-dc-ext-001",
-      "appliesTo": [
-        "SPEC_SHEET",
-        "TEST_REPORT"
-      ],
+      "appliesTo": ["SPEC_SHEET", "TEST_REPORT"],
       "hintType": "field_locator",
       "pattern": "ASHRAE Class|Operating Temperature|Inlet Temperature|Cooling Capacity|PUE",
       "note": "Data center thermal and efficiency parameter extraction"
     },
     {
       "hintId": "tx-dc-ext-002",
-      "appliesTo": [
-        "MFR_SUBMITTAL"
-      ],
+      "appliesTo": ["MFR_SUBMITTAL"],
       "hintType": "field_locator",
       "pattern": "UL Listing|FM Approval|Suppression System|Sprinkler Type",
       "note": "Fire protection certification field extraction"
@@ -188,30 +160,21 @@
         "standardId": "NFPA-75",
         "citationKey": "NFPA-75",
         "currentAdoptedVersion": "2020",
-        "allowedVersions": [
-          "2020",
-          "2017"
-        ],
+        "allowedVersions": ["2020", "2017"],
         "staleBehavior": "STALE_finding"
       },
       {
         "standardId": "NFPA-76",
         "citationKey": "NFPA-76",
         "currentAdoptedVersion": "2020",
-        "allowedVersions": [
-          "2020",
-          "2017"
-        ],
+        "allowedVersions": ["2020", "2017"],
         "staleBehavior": "STALE_finding"
       },
       {
         "standardId": "ASHRAE-THERMAL",
         "citationKey": "ASHRAE-THERMAL",
         "currentAdoptedVersion": "2021",
-        "allowedVersions": [
-          "2021",
-          "2015"
-        ],
+        "allowedVersions": ["2021", "2015"],
         "staleBehavior": "STALE_finding"
       }
     ]

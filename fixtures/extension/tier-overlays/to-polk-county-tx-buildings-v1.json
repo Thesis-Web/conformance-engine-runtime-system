@@ -57,9 +57,7 @@
   "versionIndex": "1",
   "effectiveFrom": "2024-01-01",
   "governanceLifecycle": "active",
-  "eligibilityBases": [
-    "municipality_adds_governing_standards"
-  ],
+  "eligibilityBases": ["municipality_adds_governing_standards"],
   "provenance": {
     "sourceOwner": "Lake Area LLC",
     "approvalPath": "internal-fixture",

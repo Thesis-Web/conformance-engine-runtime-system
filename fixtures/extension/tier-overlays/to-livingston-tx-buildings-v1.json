@@ -66,9 +66,7 @@
   "versionIndex": "1",
   "effectiveFrom": "2020-09-24",
   "governanceLifecycle": "active",
-  "eligibilityBases": [
-    "municipality_adds_governing_standards"
-  ],
+  "eligibilityBases": ["municipality_adds_governing_standards"],
   "provenance": {
     "sourceOwner": "Lake Area LLC",
     "approvalPath": "internal-fixture",

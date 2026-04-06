@@ -96,58 +96,36 @@
     {
       "patternId": "tx-appl-submittal-vs-test",
       "description": "Manufacturer submittal values vs tested condition values",
-      "docClasses": [
-        "MFR_SUBMITTAL",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "equipment_model",
-        "procedure_version",
-        "certification_condition"
-      ],
+      "docClasses": ["MFR_SUBMITTAL", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "procedure_version", "certification_condition"],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-appl-spec-vs-test",
       "description": "Spec sheet rated performance vs test report measured performance",
-      "docClasses": [
-        "SPEC_SHEET",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "equipment_model",
-        "certification_condition"
-      ],
+      "docClasses": ["SPEC_SHEET", "TEST_REPORT"],
+      "parameterKeys": ["equipment_model", "certification_condition"],
       "severityDefault": "high"
     },
     {
       "patternId": "tx-appl-letter-vs-test",
       "description": "Engineering letter interpretation vs test report evidence",
-      "docClasses": [
-        "ENG_LETTER",
-        "TEST_REPORT"
-      ],
-      "parameterKeys": [
-        "engineering_assertion_vs_evidence"
-      ],
+      "docClasses": ["ENG_LETTER", "TEST_REPORT"],
+      "parameterKeys": ["engineering_assertion_vs_evidence"],
       "severityDefault": "high"
     }
   ],
   "optionalExtractors": [
     {
       "hintId": "tx-appl-ext-001",
-      "appliesTo": [
-        "TEST_REPORT"
-      ],
+      "appliesTo": ["TEST_REPORT"],
       "hintType": "field_locator",
       "pattern": "Model Number|Tested Condition|SEER|EER|COP|Capacity",
       "note": "Key field extraction for appliance test reports"
     },
     {
       "hintId": "tx-appl-ext-002",
-      "appliesTo": [
-        "MFR_SUBMITTAL"
-      ],
+      "appliesTo": ["MFR_SUBMITTAL"],
       "hintType": "field_locator",
       "pattern": "Certification Number|Listed Model|Certification Condition",
       "note": "Manufacturer submittal certification field extraction"
@@ -159,20 +137,14 @@
         "standardId": "DOE-APPENDIX-AA",
         "citationKey": "DOE-AA",
         "currentAdoptedVersion": "2023",
-        "allowedVersions": [
-          "2023",
-          "2017"
-        ],
+        "allowedVersions": ["2023", "2017"],
         "staleBehavior": "STALE_finding"
       },
       {
         "standardId": "AHRI-210-240",
         "citationKey": "AHRI-210-240",
         "currentAdoptedVersion": "2023",
-        "allowedVersions": [
-          "2023",
-          "2017"
-        ],
+        "allowedVersions": ["2023", "2017"],
         "staleBehavior": "STALE_finding"
       }
     ]
