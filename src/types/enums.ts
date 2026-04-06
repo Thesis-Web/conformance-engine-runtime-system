@@ -1,7 +1,4 @@
-export type PackId =
-  | 'pack-california-highrise-v1'
-  | 'pack-california-appliance-refrig-v2'
-  | 'pack-california-datacenter-v3';
+export type { PackId } from './identifiers.js';
 
 export type SourceLane = 'case_bound' | 'curated_reference' | 'live_candidate';
 

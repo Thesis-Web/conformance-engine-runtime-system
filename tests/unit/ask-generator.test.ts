@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { generateAsks } from '../../src/core/ask-generator.js';
 import type { Finding } from '../../src/types/index.js';
 import type { PackManifest } from '../../src/types/pack-manifest.js';
+import { brandPackId } from '../../src/types/identifiers.js';
 
 function makeFinding(overrides: Partial<Finding> = {}): Finding {
   return {
     findingId: 'finding-001',
     runId: 'run-001',
-    packId: 'pack-california-highrise-v1',
+    packId: brandPackId('pack-california-highrise-v1'),
     findingClass: 'HOLE',
     severity: 'high',
     confidenceClass: 'deterministic',
@@ -27,7 +28,7 @@ function makeFinding(overrides: Partial<Finding> = {}): Finding {
 }
 
 const STUB_PACK = {
-  packId: 'pack-california-highrise-v1',
+  packId: brandPackId('pack-california-highrise-v1'),
 } as unknown as PackManifest;
 
 describe('generateAsks', () => {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { applyDeterministicRules } from '../../src/contract/rules-engine.js';
 import { loadPack } from '../../src/packs/pack-loader.js';
 import type { SourceReference, ComparisonPair, RunRecord } from '../../src/types/index.js';
+import { brandPackId } from '../../src/types/identifiers.js';
 
 function makeRun(packId: string): RunRecord {
   return {
@@ -33,7 +34,7 @@ function makeRef(id: string, text: string, docClass = 'TEST_REPORT'): SourceRefe
 describe('DRIFT-004 fix — RULE-HOLE-001: per-pack case-minimum required classes', () => {
   it('emits HOLE for missing required class in pack-v1', () => {
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
     // Only provide STD_REFERENCE — DESIGN_PLANS, TEST_REPORT, ENG_LETTER missing
     const sourceRefs = [makeRef('ref-1', 'Standard reference text', 'STD_REFERENCE')];
     const findings = applyDeterministicRules({ run, pairs: [], findings: [], pack, sourceRefs });
@@ -47,7 +48,7 @@ describe('DRIFT-004 fix — RULE-HOLE-001: per-pack case-minimum required classe
   it('does NOT emit HOLE for absent FIELD_ANNOTATION when required minimums are present', () => {
     // FIELD_ANNOTATION is not in pack-v1 required minimums — only in one-of-optional
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
     const sourceRefs = [
       makeRef('ref-1', 'Design plans text', 'DESIGN_PLANS'),
       makeRef('ref-2', 'Test report text', 'TEST_REPORT'),
@@ -64,7 +65,7 @@ describe('DRIFT-004 fix — RULE-HOLE-001: per-pack case-minimum required classe
 
   it('emits HOLE one-of-optional when none of COMPLIANCE_CERT/MFR_SUBMITTAL/FIELD_ANNOTATION present', () => {
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
     const sourceRefs = [
       makeRef('ref-1', 'design plans', 'DESIGN_PLANS'),
       makeRef('ref-2', 'test report', 'TEST_REPORT'),
@@ -81,7 +82,7 @@ describe('DRIFT-004 fix — RULE-HOLE-001: per-pack case-minimum required classe
 describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
   it('emits CONTRA when parameter values genuinely differ between two sources', () => {
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
 
     const refA = makeRef('ref-a', 'Fire Rating: 2-hour', 'TEST_REPORT');
     const refB = makeRef('ref-b', 'Fire Rating: 1-hour', 'DESIGN_PLANS');
@@ -89,7 +90,7 @@ describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
     const pair: ComparisonPair = {
       pairId: 'pair-1',
       runId: 'run-test',
-      packId: 'pack-california-highrise-v1',
+      packId: brandPackId('pack-california-highrise-v1'),
       sourceARefId: 'ref-a',
       sourceBRefId: 'ref-b',
       comparisonType: 'parameter_match',
@@ -114,7 +115,7 @@ describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
 
   it('does NOT emit CONTRA when parameter values agree', () => {
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
 
     const refA = makeRef('ref-a', 'Fire Rating: 2-hour', 'TEST_REPORT');
     const refB = makeRef('ref-b', 'Fire Rating: 2-hour', 'DESIGN_PLANS');
@@ -122,7 +123,7 @@ describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
     const pair: ComparisonPair = {
       pairId: 'pair-1',
       runId: 'run-test',
-      packId: 'pack-california-highrise-v1',
+      packId: brandPackId('pack-california-highrise-v1'),
       sourceARefId: 'ref-a',
       sourceBRefId: 'ref-b',
       comparisonType: 'parameter_match',
@@ -145,7 +146,7 @@ describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
 
   it('emits AMBIGUITY (not CONTRA) when value cannot be extracted from source text', () => {
     const pack = loadPack('fixtures/pack-v1/manifest.json');
-    const run = makeRun('pack-california-highrise-v1');
+    const run = makeRun(brandPackId('pack-california-highrise-v1'));
 
     // Text does not contain the parameterKey in extractable form
     const refA = makeRef(
@@ -158,7 +159,7 @@ describe('DRIFT-003 fix — RULE-CONTRA-001: actual value comparison', () => {
     const pair: ComparisonPair = {
       pairId: 'pair-1',
       runId: 'run-test',
-      packId: 'pack-california-highrise-v1',
+      packId: brandPackId('pack-california-highrise-v1'),
       sourceARefId: 'ref-a',
       sourceBRefId: 'ref-b',
       comparisonType: 'parameter_match',

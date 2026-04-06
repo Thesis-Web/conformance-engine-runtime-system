@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { mergeFindingSets } from '../../src/core/finding-merge.js';
 import type { Finding } from '../../src/types/index.js';
+import { brandPackId } from '../../src/types/identifiers.js';
 
 function makeFinding(overrides: Partial<Finding> = {}): Finding {
   return {
     findingId: 'finding-001',
     runId: 'run-001',
-    packId: 'pack-california-highrise-v1',
+    packId: brandPackId('pack-california-highrise-v1'),
     findingClass: 'DIFF',
     severity: 'medium',
     confidenceClass: 'deterministic',

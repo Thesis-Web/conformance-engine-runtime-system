@@ -1,5 +1,6 @@
 import type { PackManifest } from '../types/pack-manifest.js';
 import type { PackId } from '../types/index.js';
+import { brandPackId } from '../types/identifiers.js';
 
 export interface PackValidationResult {
   valid: boolean;
@@ -7,9 +8,9 @@ export interface PackValidationResult {
 }
 
 export const VALID_PACK_IDS: ReadonlyArray<PackId> = [
-  'pack-california-highrise-v1',
-  'pack-california-appliance-refrig-v2',
-  'pack-california-datacenter-v3',
+  brandPackId('pack-california-highrise-v1'),
+  brandPackId('pack-california-appliance-refrig-v2'),
+  brandPackId('pack-california-datacenter-v3'),
 ];
 
 // INCOMPLETE-002 fix: deep pack manifest validation.
@@ -180,7 +181,7 @@ interface RequiredPair {
 }
 
 const MANDATORY_COVERAGE: Readonly<Record<string, ReadonlyArray<RequiredPair>>> = {
-  'pack-california-highrise-v1': [
+  [brandPackId('pack-california-highrise-v1')]: [
     // §23.3 — plan detail vs test report condition
     { classA: 'DESIGN_PLANS', classB: 'TEST_REPORT', description: '§23.3 plan vs test report' },
     // §23.3 — engineering letter wording vs evidence support
@@ -210,7 +211,7 @@ const MANDATORY_COVERAGE: Readonly<Record<string, ReadonlyArray<RequiredPair>>> 
       description: '§23.3 eng letter vs std reference (seismic)',
     },
   ],
-  'pack-california-appliance-refrig-v2': [
+  [brandPackId('pack-california-appliance-refrig-v2')]: [
     // §24.3 — manufacturer submittal vs tested condition
     {
       classA: 'MFR_SUBMITTAL',
@@ -238,7 +239,7 @@ const MANDATORY_COVERAGE: Readonly<Record<string, ReadonlyArray<RequiredPair>>> 
       description: '§24.3 eng letter vs mfr submittal (unsupported claim)',
     },
   ],
-  'pack-california-datacenter-v3': [
+  [brandPackId('pack-california-datacenter-v3')]: [
     // §25.3 — cooling load spec vs equipment limits
     {
       classA: 'DESIGN_PLANS',

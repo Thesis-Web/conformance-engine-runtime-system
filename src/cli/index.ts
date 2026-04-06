@@ -5,11 +5,12 @@ import { loadPack, packExists } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
 import { runCase } from '../orchestration/run-orchestrator.js';
 import type { PackId } from '../types/index.js';
+import { brandPackId } from '../types/identifiers.js';
 
 const VALID_PACK_IDS: ReadonlyArray<PackId> = [
-  'pack-california-highrise-v1',
-  'pack-california-appliance-refrig-v2',
-  'pack-california-datacenter-v3',
+  brandPackId('pack-california-highrise-v1'),
+  brandPackId('pack-california-appliance-refrig-v2'),
+  brandPackId('pack-california-datacenter-v3'),
 ];
 
 const USAGE = `Usage:
