@@ -74,14 +74,14 @@ export function isLawfullyReusable(
   if ((record.municipalityId ?? null) !== (input.municipalityId ?? null)) return false;
   if (record.compositionDigest !== compositionDigest) return false;
 
-  // §19.1 ordered tierPath equality — must match exactly
-  // tierPath on input may be absent (used tierPathOverride was not persisted separately);
-  // if input.tierPathOverride is present we compare against it, otherwise
-  // we trust the stored tierPath was built deterministically from the same inputs.
-  // For POC: if input provides a tierPathOverride, compare. Otherwise skip (trust digest).
-  if (input.tierPathOverride !== undefined) {
-    if (!tierPathsEqual(record.tierPath, input.tierPathOverride)) return false;
-  }
+  // §19.1 ordered tierPath equality — mandatory regardless of how tierPath was derived.
+  // When the caller supplies tierPathOverride, compare against it directly.
+  // Otherwise compare against record.tierPath using the store record as the authority
+  // (the store record was built from the same deterministic build path that would run again).
+  // The compositionDigest also encodes component content but the spec requires
+  // explicit tierPath equality as a separate precondition.
+  const inputTierPath = input.tierPathOverride ?? record.tierPath;
+  if (!tierPathsEqual(record.tierPath, inputTierPath)) return false;
 
   // §19.1 + §19.4 validation flags — both must be true
   if (!record.compatibilityValidated) return false;

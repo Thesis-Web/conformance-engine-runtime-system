@@ -61,12 +61,17 @@ export async function extractText(filePath: string, fileId: string): Promise<Ext
         warnings,
       };
     } catch (err) {
-      warnings.push(`pdf-parse failed: ${String(err)} — falling back to raw-utf8`);
+      // Spec §14.1 — raw UTF-8 decode of binary PDF is not a lawful extraction fallback.
+      // Log the failure deterministically. Return empty text so the file is still
+      // tracked in the ingest log but generates no source references from garbage content.
+      warnings.push(
+        `pdf-parse failed: ${String(err)} — extraction failed, file recorded with empty text`,
+      );
       return {
         fileId,
-        method: 'raw-utf8-stub',
-        parserVersion: 'fallback',
-        rawText: readFileSync(filePath, 'utf-8'),
+        method: 'pdf-extraction-failed',
+        parserVersion: 'none',
+        rawText: '',
         usedOcrFallback: false,
         warnings,
       };
@@ -85,12 +90,17 @@ export async function extractText(filePath: string, fileId: string): Promise<Ext
         warnings,
       };
     } catch (err) {
-      warnings.push(`mammoth failed: ${String(err)} — falling back to raw-utf8`);
+      // Spec §14.1 — raw UTF-8 decode of binary DOCX is not a lawful extraction fallback.
+      // Log the failure deterministically. Return empty text so the file is still
+      // tracked in the ingest log but generates no source references from garbage content.
+      warnings.push(
+        `mammoth failed: ${String(err)} — extraction failed, file recorded with empty text`,
+      );
       return {
         fileId,
-        method: 'raw-utf8-stub',
-        parserVersion: 'fallback',
-        rawText: readFileSync(filePath, 'utf-8'),
+        method: 'docx-extraction-failed',
+        parserVersion: 'none',
+        rawText: '',
         usedOcrFallback: false,
         warnings,
       };

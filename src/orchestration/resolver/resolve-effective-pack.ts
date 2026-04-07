@@ -223,7 +223,7 @@ async function resolveReplay(
 ): Promise<{ manifest: EffectivePackManifest; componentDigests: Sha256Hex[] }> {
   if (!input.replaySourceRunId) {
     throw new ResolverError(
-      'ERR_REPLAY_SOURCE_MISSING',
+      'ERR_REPLAY_SOURCE_RUN_REQUIRED',
       'replaySourceRunId is required in replay mode',
     );
   }

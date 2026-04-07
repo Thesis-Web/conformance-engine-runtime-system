@@ -126,7 +126,7 @@ async function runExtensionValidation(): Promise<boolean> {
           'FAIL extension live resolution — fresh new_case failed: ' +
             (freshResult.rejectionReason ?? 'unknown'),
         );
-        pass = false;
+        extPass = false;
       } else {
         console.log(
           'OK extension: fresh new_case resolution produced effectivePackId ' +
@@ -138,20 +138,20 @@ async function runExtensionValidation(): Promise<boolean> {
         const storeRecord = lookupEffectivePackById(freshResult.manifest.effectivePackId);
         if (!storeRecord) {
           console.error('FAIL extension: store record missing after fresh compose');
-          pass = false;
+          extPass = false;
         } else {
           storeRecords.push(storeRecord);
           if (!storeRecord.replayValidated) {
             console.error(
               'FAIL extension: replayValidated is false after fresh compose — DIFF-AUDIT-002 not fixed',
             );
-            pass = false;
+            extPass = false;
           } else {
             console.log('OK extension: store record replayValidated=true after fresh compose');
           }
           if (!storeRecord.compatibilityValidated) {
             console.error('FAIL extension: compatibilityValidated is false');
-            pass = false;
+            extPass = false;
           } else {
             console.log('OK extension: store record compatibilityValidated=true');
           }
@@ -183,7 +183,7 @@ async function runExtensionValidation(): Promise<boolean> {
         console.error(
           'FAIL extension: reuse resolution failed: ' + (reuseResult.rejectionReason ?? 'unknown'),
         );
-        pass = false;
+        extPass = false;
       } else {
         console.log('OK extension: reuse resolution returned ' + reuseResult.resolutionMethod);
         if (reuseResult.manifest) effectiveManifests.push(reuseResult.manifest);
@@ -216,16 +216,163 @@ async function runExtensionValidation(): Promise<boolean> {
 
       if (noMatchResult.resolved) {
         console.error('FAIL extension: no-match case should have rejected but resolved');
-        pass = false;
+        extPass = false;
       } else {
         console.log(
           'OK extension: no-match rejection fired correctly: ' +
             (noMatchResult.rejectionCode ?? 'unknown'),
         );
       }
+
+      // --- Test 4: TX appliance resolution --- DIFF-AUDIT-016-007
+      const txAppliancePack = existsSync(
+        join(EXT_PACKS_DIR, 'pack-us-tx-appliance_refrigeration-v1', 'manifest.json'),
+      )
+        ? loadPack(join(EXT_PACKS_DIR, 'pack-us-tx-appliance_refrigeration-v1', 'manifest.json'))
+        : txBuildingsPack;
+      const applianceResult = await resolveEffectivePack({
+        input: {
+          ...baseResolutionInput,
+          runId: 'validate-run-004' as typeof baseResolutionInput.runId,
+          packId: brandPackId('pack-us-tx-appliance_refrigeration-v1'),
+          trackFamilyId: brandTrackFamilyId('appliance_refrigeration'),
+        },
+        family,
+        allModules: modules,
+        allOverlays: overlays,
+        basePackManifest: txAppliancePack,
+        storeRoot,
+        artifactRoot: storeRoot,
+      });
+      resolutionResults.push({
+        resolved: applianceResult.resolved,
+        ...(applianceResult.rejectionCode !== undefined && {
+          rejectionCode: applianceResult.rejectionCode,
+        }),
+      });
+      if (!applianceResult.resolved) {
+        console.error(
+          'FAIL extension: TX appliance resolution failed: ' +
+            (applianceResult.rejectionReason ?? 'unknown'),
+        );
+        extPass = false;
+      } else {
+        console.log(
+          'OK extension: TX appliance resolution produced ' +
+            String(applianceResult.effectivePackId),
+        );
+        if (applianceResult.manifest) effectiveManifests.push(applianceResult.manifest);
+      }
+
+      // --- Test 5: TX datacenter resolution --- DIFF-AUDIT-016-007
+      const txDatacenterPack = existsSync(
+        join(EXT_PACKS_DIR, 'pack-us-tx-datacenter-v1', 'manifest.json'),
+      )
+        ? loadPack(join(EXT_PACKS_DIR, 'pack-us-tx-datacenter-v1', 'manifest.json'))
+        : txBuildingsPack;
+      const datacenterResult = await resolveEffectivePack({
+        input: {
+          ...baseResolutionInput,
+          runId: 'validate-run-005' as typeof baseResolutionInput.runId,
+          packId: brandPackId('pack-us-tx-datacenter-v1'),
+          trackFamilyId: brandTrackFamilyId('datacenter'),
+        },
+        family,
+        allModules: modules,
+        allOverlays: overlays,
+        basePackManifest: txDatacenterPack,
+        storeRoot,
+        artifactRoot: storeRoot,
+      });
+      resolutionResults.push({
+        resolved: datacenterResult.resolved,
+        ...(datacenterResult.rejectionCode !== undefined && {
+          rejectionCode: datacenterResult.rejectionCode,
+        }),
+      });
+      if (!datacenterResult.resolved) {
+        console.error(
+          'FAIL extension: TX datacenter resolution failed: ' +
+            (datacenterResult.rejectionReason ?? 'unknown'),
+        );
+        extPass = false;
+      } else {
+        console.log(
+          'OK extension: TX datacenter resolution produced ' +
+            String(datacenterResult.effectivePackId),
+        );
+        if (datacenterResult.manifest) effectiveManifests.push(datacenterResult.manifest);
+      }
+
+      // --- Test 6: Replay path --- DIFF-AUDIT-016-007
+      if (freshResult.resolved && freshResult.effectivePackId) {
+        const { lookupEffectivePackById: lookup } =
+          await import('../src/orchestration/effective-pack-store/effective-pack-store.js');
+        const stored = lookup(freshResult.effectivePackId);
+        if (stored) {
+          const replayResult = await resolveEffectivePack({
+            input: {
+              ...baseResolutionInput,
+              mode: 'replay' as const,
+              runId: 'validate-run-006' as typeof baseResolutionInput.runId,
+              replaySourceRunId: 'validate-run-001' as typeof baseResolutionInput.runId,
+            },
+            family,
+            allModules: modules,
+            allOverlays: overlays,
+            basePackManifest: txBuildingsPack,
+            storeRoot,
+            artifactRoot: storeRoot,
+            pinnedFields: {
+              resolvedEffectivePackId: freshResult.effectivePackId,
+              compositionDigest: stored.compositionDigest,
+              componentDigests: stored.componentDigests,
+            },
+          });
+          if (!replayResult.resolved) {
+            console.error(
+              'FAIL extension: replay path failed: ' + (replayResult.rejectionReason ?? 'unknown'),
+            );
+            extPass = false;
+          } else if (replayResult.manifest?.replayPinned !== true) {
+            console.error('FAIL extension: replay result missing replayPinned=true');
+            extPass = false;
+          } else {
+            console.log('OK extension: replay path resolved with replayed_pinned');
+          }
+        }
+      }
+
+      // --- Test 7: Overlap conflict rejection --- DIFF-AUDIT-016-007
+      const dupModule = { ...modules[0] };
+      if (dupModule && modules.length > 0) {
+        const overlapResult = await resolveEffectivePack({
+          input: {
+            ...baseResolutionInput,
+            runId: 'validate-run-007' as typeof baseResolutionInput.runId,
+          },
+          family,
+          allModules: [modules[0]!, { ...modules[0]!, effectiveFrom: '2024-06-01' }].filter(
+            (m): m is (typeof modules)[0] & {} => m !== undefined,
+          ),
+          allOverlays: [],
+          basePackManifest: txBuildingsPack,
+          storeRoot,
+          artifactRoot: storeRoot,
+        });
+        if (overlapResult.resolved) {
+          console.error('FAIL extension: overlap conflict should have rejected but resolved');
+          extPass = false;
+        } else {
+          console.log(
+            'OK extension: overlap conflict rejected correctly: ' +
+              (overlapResult.rejectionCode ?? 'unknown'),
+          );
+        }
+      }
     } catch (err) {
       console.error('FAIL extension live resolution threw: ' + String(err));
-      pass = false;
+      extPass = false;
     }
 
     // HOLE-AUDIT-001: Require at least one manifest from live resolution.
@@ -233,7 +380,7 @@ async function runExtensionValidation(): Promise<boolean> {
       console.error(
         'FAIL extension: zero effective manifests produced — extension gate has no coverage',
       );
-      pass = false;
+      extPass = false;
     } else {
       console.log(
         `\nRunning extension gates against ${effectiveManifests.length} live manifests, ${storeRecords.length} store records...`,
@@ -253,7 +400,7 @@ async function runExtensionValidation(): Promise<boolean> {
       for (const result of extGateResults) {
         if (!result.passed) {
           console.error(`FAIL extension gate [${result.gateName}]: ${result.errors.join(', ')}`);
-          pass = false;
+          extPass = false;
         } else {
           console.log(`OK extension gate: ${result.gateName}`);
         }
@@ -277,7 +424,7 @@ async function runExtensionValidation(): Promise<boolean> {
               const result = validatePack(manifest);
               if (!result.valid) {
                 console.error(`FAIL extension pack: ${mPath} — ${result.errors.join(', ')}`);
-                pass = false;
+                extPass = false;
               } else {
                 console.log(`OK extension pack: ${mPath}`);
               }

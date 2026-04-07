@@ -5,7 +5,7 @@ import { loadPack, packExists } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
 import { runCase, type ResolutionBundle } from '../orchestration/run-orchestrator.js';
 import type { PackId } from '../types/index.js';
-import { brandPackId } from '../types/identifiers.js';
+import { brandPackId, validatePackId } from '../types/identifiers.js';
 import { loadJurisdictionFamilyConfig } from '../packs/jurisdiction-families/jurisdiction-family-loader.js';
 import { loadBaseStandardsModulesFromDir } from '../packs/base-modules/base-standards-loader.js';
 import { loadTierOverlaysFromDir } from '../packs/tier-overlays/tier-overlay-loader.js';
@@ -71,8 +71,11 @@ export async function main(): Promise<void> {
         console.error('init-case requires --pack and --title');
         process.exit(1);
       }
-      if (!VALID_PACK_IDS.includes(packId as PackId)) {
-        console.error(`unknown packId: ${packId}`);
+      const packIdValidation = validatePackId(packId);
+      if (!packIdValidation.valid) {
+        console.error(
+          `invalid packId '${packId}': ${packIdValidation.rejectionReason ?? 'unknown reason'}`,
+        );
         process.exit(1);
       }
       const sourceRoot = resolve(args.values['source-root'] ?? './sources');

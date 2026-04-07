@@ -20,6 +20,14 @@ export interface CaseRecord {
   actorMode: 'human_interface_first';
   sourceRoot: RelativePath;
   notes?: string;
+  // Extension fields — ext-spec §11.1: present when extension resolution is active.
+  // Optional for backward compat with legacy CA-pack cases that do not use a resolver.
+  trackFamilyId?: string;
+  jurisdictionFamilyId?: string;
+  jurisdictionId?: string;
+  municipalityId?: string;
+  uploadedBy?: NonEmptyString;
+  governingAsOfDate?: string;
 }
 
 export interface RunRecord {
@@ -35,6 +43,17 @@ export interface RunRecord {
   operatorMode: 'manual_prompt_bridge';
   artifactRoot: RelativePath;
   failureReason?: string;
+  // Extension resolution fields — ext-spec §11.2, §20.
+  // Persisted after resolveEffectivePack() succeeds, before created→ingesting.
+  // Optional for legacy CA-pack runs that do not use the extension resolver.
+  releaseState?: 'draft' | 'in_review' | 'released' | 'superseded';
+  resolvedEffectivePackId?: string;
+  resolvedAt?: IsoDatetime;
+  resolvedBy?: string;
+  governingAsOfDate?: string;
+  compositionDigest?: Sha256Hex;
+  componentDigests?: Sha256Hex[];
+  tierPath?: Array<{ tierType: string; tierId: string; parentTierId?: string }>;
 }
 
 export interface IngestedFile {

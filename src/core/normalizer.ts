@@ -2,7 +2,16 @@ import { createHash } from 'node:crypto';
 
 export interface ExtractionResult {
   fileId: string;
-  method: 'pdf-parse' | 'docx-parse' | 'text' | 'json' | 'csv' | 'ocr-fallback' | 'raw-utf8-stub';
+  method:
+    | 'pdf-parse'
+    | 'docx-parse'
+    | 'text'
+    | 'json'
+    | 'csv'
+    | 'ocr-fallback'
+    | 'raw-utf8-stub'
+    | 'pdf-extraction-failed'
+    | 'docx-extraction-failed';
   parserVersion: string;
   pageCount?: number;
   usedOcrFallback: boolean;

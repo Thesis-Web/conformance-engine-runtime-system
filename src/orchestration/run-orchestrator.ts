@@ -1,6 +1,11 @@
 import { loadPack } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
-import { createRun, saveRun, updateRunStatus } from './run-manager.js';
+import {
+  createRun,
+  saveRun,
+  updateRunStatus,
+  patchRunWithResolutionMetadata,
+} from './run-manager.js';
 import { loadCase } from './case-manager.js';
 import { transition, makeArtifactPresenceChecker } from './state-machine.js';
 import { REQUIRED_ARTIFACT_NAMES } from '../validation/gates.js';
@@ -120,18 +125,29 @@ function enforceGates(results: GateResult[], stage: string): void {
 // Returns a PackManifest in both cases — Layer 1 always receives PackManifest.
 // ---------------------------------------------------------------------------
 
+interface ResolvedPackResult {
+  pack: PackManifest;
+  // Extension metadata present only when resolver path was taken — ext-spec §11.2
+  resolutionMetadata?: {
+    resolvedEffectivePackId: string;
+    resolvedAt: string;
+    resolvedBy: string;
+    governingAsOfDate: string;
+    compositionDigest: string;
+    componentDigests: string[];
+    tierPath: Array<{ tierType: string; tierId: string; parentTierId?: string }>;
+  };
+}
+
 async function resolvePack(
   input: RunCaseInput,
   artifactRoot: string,
   caseId: string,
   runId: string,
-): Promise<PackManifest> {
+): Promise<ResolvedPackResult> {
   if (input.resolution) {
     const baseManifest = loadPack(input.packManifestPath);
     // WIRE-GAP-001: inject real caseId and runId from the created run.
-    // The caller (CLI) cannot know these at resolution-input construction time.
-    // The orchestrator owns run creation so it injects them here before the resolver
-    // validates the input. validateResolutionInput() requires both to be non-empty.
     const resolvedInput = {
       ...input.resolution.input,
       caseId: caseId as typeof input.resolution.input.caseId,
@@ -151,12 +167,28 @@ async function resolvePack(
         `Effective pack resolution failed: [${resResult.rejectionCode ?? 'ERR'}] ${resResult.rejectionReason ?? 'unknown error'}`,
       );
     }
+    const manifest = resResult.manifest;
     // ext-spec §12.3 — project to base PackManifest before Layer 1 runs.
     // Layer 1 never sees EffectivePackManifest directly.
-    return projectToBasePackManifest(resResult.manifest);
+    const pack = projectToBasePackManifest(manifest);
+    // Capture resolution metadata for persistence onto the run record — ext-spec §11.2, §20.
+    const resolutionMetadata = {
+      resolvedEffectivePackId: manifest.effectivePackId as string,
+      resolvedAt: manifest.resolvedAt,
+      resolvedBy: manifest.resolvedBy,
+      governingAsOfDate: manifest.governingAsOfDate,
+      compositionDigest: manifest.compositionDigest as string,
+      componentDigests: (resResult.componentDigests ?? []) as string[],
+      tierPath: manifest.tierPath as Array<{
+        tierType: string;
+        tierId: string;
+        parentTierId?: string;
+      }>,
+    };
+    return { pack, resolutionMetadata };
   }
   // Legacy path — California packs, no resolution needed.
-  return loadPack(input.packManifestPath);
+  return { pack: loadPack(input.packManifestPath) };
 }
 
 export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
@@ -168,10 +200,22 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
   try {
     // STUB-001: resolve pack — extension or legacy path — before ingesting.
     // ext-spec §11.3: ERR_EFFECTIVE_PACK_NOT_RESOLVED if resolution absent when required.
-    const pack = await resolvePack(input, run.artifactRoot, caseRecord.caseId, run.runId);
+    const { pack, resolutionMetadata } = await resolvePack(
+      input,
+      run.artifactRoot,
+      caseRecord.caseId,
+      run.runId,
+    );
     const packValidation = validatePack(pack);
     if (!packValidation.valid) {
       throw new Error(`pack validation failed: ${packValidation.errors.join(', ')}`);
+    }
+
+    // CONTRA-016-002: persist extension resolution metadata on the run before ingesting.
+    // ext-spec §11.3 — resolution fields must be present before created→ingesting.
+    if (resolutionMetadata !== undefined) {
+      run = patchRunWithResolutionMetadata(run, resolutionMetadata);
+      saveRun(run);
     }
 
     transition(run.status, 'ingesting');
@@ -286,7 +330,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     run = updateRunStatus(run, 'pass1_complete');
     saveRun(run);
 
-    let pass2Out: Pass2Output = { auditEntries: [], auditCommentary: 'pass2 stub' };
+    let pass2Out: Pass2Output = { auditEntries: [], auditCommentary: '' };
     try {
       pass2Out = await runPass2({ run, pass1: pass1Out, sourceRefs, pack });
     } catch (err) {

@@ -23,12 +23,9 @@
       "type": "string"
     },
     "packId": {
+      "description": "Governed pack identifier. Accepts legacy California pack IDs and open governed pack IDs matching the canonical pattern (e.g. pack-us-tx-buildings-v1).",
       "type": "string",
-      "enum": [
-        "pack-california-highrise-v1",
-        "pack-california-appliance-refrig-v2",
-        "pack-california-datacenter-v3"
-      ]
+      "minLength": 1
     },
     "status": {
       "type": "string",
