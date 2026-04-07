@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
-import type { ComparisonPair, Finding, RunRecord, SourceReference } from '../types/index.js';
+import type {
+  ComparisonPair,
+  Finding,
+  RunRecord,
+  SourceReference,
+  SourceLane,
+} from '../types/index.js';
 import type { PackManifest } from '../types/pack-manifest.js';
+import { canEmitFindings } from './source-lane.js';
 
 export interface RuleInput {
   run: RunRecord;
@@ -23,6 +30,24 @@ export interface DeterministicRule {
   packId: string | 'all';
   applies(input: RuleInput): boolean;
   execute(input: RuleInput): RuleResult[];
+}
+
+// STUB-005: lane-check helper — spec §17.4.1 deterministic assertion boundary.
+// Lane 3 (live_candidate) sources must not participate in deterministic findings.
+// If either source in a pair is live_candidate, route to interpretive escalation.
+function pairCanEmitDeterministicFinding(
+  sourceARefId: string,
+  sourceBRefId: string | undefined,
+  laneMap: ReadonlyMap<string, string> | undefined,
+): boolean {
+  if (!laneMap) return true;
+  const laneA = laneMap.get(sourceARefId) ?? 'case_bound';
+  if (!canEmitFindings(laneA as SourceLane)) return false;
+  if (sourceBRefId) {
+    const laneB = laneMap.get(sourceBRefId) ?? 'case_bound';
+    if (!canEmitFindings(laneB as SourceLane)) return false;
+  }
+  return true;
 }
 
 const FORBIDDEN_CERTIFICATION_PHRASES = [
@@ -269,6 +294,33 @@ const RULE_CONTRA_001: DeterministicRule = {
       const valueA = extractParameterValue(refA.normalizedText, pair.parameterKey);
       const valueB = extractParameterValue(refB.normalizedText, pair.parameterKey);
 
+      // STUB-005: lane check — reject deterministic finding if either source is Lane 3.
+      if (!pairCanEmitDeterministicFinding(pair.sourceARefId, pair.sourceBRefId, input.laneMap)) {
+        results.push({
+          finding: {
+            findingId: randomUUID(),
+            runId: input.run.runId,
+            packId: input.pack.packId,
+            findingClass: 'AMBIGUITY',
+            severity: 'medium',
+            confidenceClass: 'interpretive',
+            confidenceBand: 'low',
+            extractionConfidence: 0.3,
+            classificationConfidence: 0.5,
+            contradictionConfidence: 0.3,
+            applicabilityConfidence: 0.3,
+            sourceAuthorityConfidence: 0.3,
+            sourceARefId: pair.sourceARefId,
+            sourceBRefId: pair.sourceBRefId,
+            escalationRequired: true,
+            narrativeDescription: `Comparison pair for '${pair.parameterKey}' involves a Lane 3 live_candidate source. Cannot emit deterministic finding. Requires engineer review and promotion before findings can be asserted.`,
+            tags: [pair.parameterKey, 'live_candidate_ref', 'lane3-blocked'],
+            emittedBy: 'rules',
+          },
+        });
+        continue;
+      }
+
       // Both values found — compare them
       if (valueA !== null && valueB !== null) {
         if (normalizeValue(valueA) === normalizeValue(valueB)) continue; // agreement, no finding
@@ -418,6 +470,11 @@ const RULE_STALE_001: DeterministicRule = {
 
       const citingRef = sourceRefMap.get(pair.sourceARefId);
       if (!citingRef) continue;
+
+      // STUB-005: lane check — do not emit deterministic STALE for Lane 3 sources.
+      if (!pairCanEmitDeterministicFinding(pair.sourceARefId, pair.sourceBRefId, input.laneMap)) {
+        continue; // Lane 3 source; gate will catch this; no deterministic assertion.
+      }
 
       const searchText = citingRef.normalizedText + ' ' + JSON.stringify(citingRef.metadata);
       const yearPattern = /\b(19|20)\d{2}\b/g;

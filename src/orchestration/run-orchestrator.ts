@@ -15,12 +15,21 @@ import { runAllGates } from '../validation/gates.js';
 import { runPass1 } from '../core/pass1-adapter.js';
 import { runPass2 } from '../core/pass2-adapter.js';
 import { applyDeterministicRules } from '../contract/rules-engine.js';
+import { applyEscalationTriggers } from '../contract/escalation-triggers.js';
 import {
   mergeFindingSets,
   type Pass1Output,
   type Pass2Output,
   type RulesOutput,
 } from '../core/finding-merge.js';
+import { resolveEffectivePack } from './resolver/resolve-effective-pack.js';
+import { projectToBasePackManifest } from '../packs/effective/effective-pack-compatibility.js';
+import type {
+  BaseStandardsModule,
+  EffectivePackResolutionInput,
+  JurisdictionFamilyConfig,
+  TierOverlay,
+} from '../types/effective-pack.js';
 import type {
   RunRecord,
   SourceReference,
@@ -32,14 +41,42 @@ import type {
   ConfidenceClass,
   ConfidenceBand,
 } from '../types/index.js';
+import type { PackManifest } from '../types/pack-manifest.js';
 import type { GateResult } from '../validation/gates.js';
 import { readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
+// ---------------------------------------------------------------------------
+// STUB-001: ResolutionBundle — caller provides all resolution context.
+// When present, the orchestrator runs the effective-pack resolver and
+// projects the result to PackManifest via the Layer 1 boundary.
+// When absent, the orchestrator falls back to legacy loadPack() path.
+// ext-spec §11.3 — resolution must complete before created→ingesting.
+// ---------------------------------------------------------------------------
+
+export interface ResolutionBundle {
+  /** Governing resolution input — packId, trackFamilyId, jurisdictionId, etc. */
+  input: EffectivePackResolutionInput;
+  /** Pre-loaded jurisdiction family config — caller owns loading. */
+  family: JurisdictionFamilyConfig;
+  /** Pre-loaded base standards modules — caller owns loading. */
+  modules: BaseStandardsModule[];
+  /** Pre-loaded tier overlays — caller owns loading. */
+  overlays: TierOverlay[];
+  /** Root directory for effective-pack store persistence. */
+  storeRoot: string;
+}
+
 export interface RunCaseInput {
   casePath: string;
   packManifestPath: string;
+  /**
+   * Optional: if provided, the orchestrator resolves an EffectivePackManifest
+   * and projects it to PackManifest before Layer 1 runs.
+   * If absent, legacy loadPack() path is used (California packs).
+   */
+  resolution?: ResolutionBundle;
 }
 
 export interface RunCaseOutput {
@@ -77,18 +114,52 @@ function enforceGates(results: GateResult[], stage: string): void {
   );
 }
 
+// ---------------------------------------------------------------------------
+// STUB-001: resolvePack — internal helper that routes to resolver or legacy
+// path depending on whether a ResolutionBundle was supplied by the caller.
+// Returns a PackManifest in both cases — Layer 1 always receives PackManifest.
+// ---------------------------------------------------------------------------
+
+async function resolvePack(input: RunCaseInput, artifactRoot: string): Promise<PackManifest> {
+  if (input.resolution) {
+    const baseManifest = loadPack(input.packManifestPath);
+    const resResult = await resolveEffectivePack({
+      input: input.resolution.input,
+      family: input.resolution.family,
+      allModules: input.resolution.modules,
+      allOverlays: input.resolution.overlays,
+      basePackManifest: baseManifest,
+      storeRoot: input.resolution.storeRoot,
+      artifactRoot,
+    });
+    if (!resResult.resolved || !resResult.manifest) {
+      throw new Error(
+        `Effective pack resolution failed: [${resResult.rejectionCode ?? 'ERR'}] ${resResult.rejectionReason ?? 'unknown error'}`,
+      );
+    }
+    // ext-spec §12.3 — project to base PackManifest before Layer 1 runs.
+    // Layer 1 never sees EffectivePackManifest directly.
+    return projectToBasePackManifest(resResult.manifest);
+  }
+  // Legacy path — California packs, no resolution needed.
+  return loadPack(input.packManifestPath);
+}
+
 export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
   const caseRecord = loadCase(input.casePath);
-  const pack = loadPack(input.packManifestPath);
-  const packValidation = validatePack(pack);
-  if (!packValidation.valid) {
-    throw new Error(`pack validation failed: ${packValidation.errors.join(', ')}`);
-  }
 
   let run = createRun(caseRecord, join(input.casePath, 'runs'));
   saveRun(run);
 
   try {
+    // STUB-001: resolve pack — extension or legacy path — before ingesting.
+    // ext-spec §11.3: ERR_EFFECTIVE_PACK_NOT_RESOLVED if resolution absent when required.
+    const pack = await resolvePack(input, run.artifactRoot);
+    const packValidation = validatePack(pack);
+    if (!packValidation.valid) {
+      throw new Error(`pack validation failed: ${packValidation.errors.join(', ')}`);
+    }
+
     transition(run.status, 'ingesting');
     run = updateRunStatus(run, 'ingesting');
     saveRun(run);
@@ -121,8 +192,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     const classifications: Array<{ fileId: string; result: ReturnType<typeof classifyDocument> }> =
       [];
     // CLASSIFIER-FIX-001: collect unresolved files for escalation per §15.2 step 6.
-    // When docClass is null the file must not be silently assigned a default class.
-    // Instead it routes to the ambiguity queue as an AMBIGUITY finding.
     const unresolvedClassFindings: Finding[] = [];
 
     for (const file of ingestedFiles) {
@@ -136,7 +205,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
       classifications.push({ fileId: file.fileId, result: classResult });
 
       if (classResult.docClass === null) {
-        // §15.2 step 6: unresolved classification becomes escalation item
         unresolvedClassFindings.push({
           findingId: randomUUID(),
           runId: run.runId,
@@ -157,7 +225,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
           tags: ['unresolved-class', 'escalation-required'],
           emittedBy: 'rules',
         });
-        continue; // skip chunking — no class means no valid source ref
+        continue;
       }
 
       const chunks = chunkText(
@@ -233,7 +301,12 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     saveRun(run);
 
     const merged = mergeFindingSets(pass1Out, pass2Out, rulesOut);
-    const allFindings = merged.findings;
+
+    // STUB-002: apply governed escalation triggers (ESC-001..ESC-005, spec §17.5).
+    // This ensures all five blueprint escalation conditions fire on merged findings,
+    // not just what pass2 and rules-engine happened to escalate inline.
+    const allFindings = applyEscalationTriggers(merged.findings);
+
     const asks = generateAsks(allFindings, pack);
 
     const escalatedFindings = allFindings.filter((f) => f.escalationRequired);
@@ -271,8 +344,6 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
     const gateResults = runAllGates(run, allFindings, sourceRefLaneMap, pack);
     enforceGates(gateResults, 'validation');
 
-    // CONTRA-STATE-001 fix: inject real artifact presence checker for artifacts_built → validated.
-    // This is the only transition where required files exist on disk.
     const artifactChecker = makeArtifactPresenceChecker(run.artifactRoot, REQUIRED_ARTIFACT_NAMES);
     transition(run.status, 'validated', artifactChecker);
     run = updateRunStatus(run, 'validated');

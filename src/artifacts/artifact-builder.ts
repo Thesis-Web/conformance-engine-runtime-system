@@ -14,6 +14,7 @@ import type {
 import type { ClassificationResult } from '../core/classifier.js';
 import { REQUIRED_ARTIFACT_NAMES } from '../validation/gates.js';
 export { REQUIRED_ARTIFACT_NAMES };
+import { computeReadiness, READINESS_LABEL } from '../validation/readiness-metric.js';
 
 export interface ArtifactInput {
   run: RunRecord;
@@ -83,6 +84,11 @@ function buildOutputBrief(input: ArtifactInput): string {
     `## Ask Summary`,
     `Asks: ${input.asks.length} | Required for clean output: ${input.asks.filter((a) => a.requiredForCleanOutput).length}`,
     ...askLines,
+    ``,
+    ``,
+    `## Internal Triage Metric`,
+    `${READINESS_LABEL}`,
+    `Score: ${computeReadiness(input.allFindings).score}/100`,
     ``,
     `> OPERATOR NOTE: This output is not a certification, approval, or signoff. All findings require licensed engineer review.`,
   ].join('\n');

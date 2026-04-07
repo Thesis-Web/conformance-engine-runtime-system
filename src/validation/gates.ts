@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import type { Finding, RunRecord } from '../types/index.js';
 import type { PackManifest } from '../types/pack-manifest.js';
+import { validateFindingBatch } from './schema-validator.js';
 
 export const REQUIRED_ARTIFACT_NAMES = [
   '01-ingest-log.json',
@@ -251,6 +252,18 @@ function collectAllEmittedText(artifactRoot: string): string {
   return parts.join('\n');
 }
 
+// STUB-006: finding schema gate — validates all emitted findings against Zod schema.
+// Catches type drift, confidence values out of range not caught by confidenceRangeGate,
+// and any structural deviations from the Finding contract.
+export function findingSchemaGate(findings: Finding[]): GateResult {
+  const errors = validateFindingBatch(findings);
+  return {
+    gateName: 'finding-schema',
+    passed: errors.length === 0,
+    errors,
+  };
+}
+
 export function runAllGates(
   run: RunRecord,
   findings: Finding[],
@@ -265,6 +278,7 @@ export function runAllGates(
   const results: GateResult[] = [
     noCertificationLanguageGate(allEmittedText),
     confidenceRangeGate(findings),
+    findingSchemaGate(findings),
     noLane3AuthorityGate(findings, laneMap),
     artifactPresenceGate(run.artifactRoot),
     artifactFilenameGate(run.artifactRoot),

@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import type { Finding } from '../types/index.js';
 
-export const PackIdSchema = z.enum([
-  'pack-california-highrise-v1',
-  'pack-california-appliance-refrig-v2',
-  'pack-california-datacenter-v3',
-]);
+// STUB-006: PackIdSchema updated to open string per DIFF-EXT-BASE-001.
+// The original closed enum was spec-compliant for California-only builds
+// but incompatible with the open identifier model introduced in extension step 1.
+// Any non-empty string is a valid governed PackId; structural validity is
+// enforced by validatePackId() in identifiers.ts at resolution time.
+export const PackIdSchema = z.string().min(1);
 
 export const RunStatusSchema = z.enum([
   'created',
@@ -61,6 +62,26 @@ export const FindingSchema = z.object({
   emittedBy: z.enum(['pass1', 'pass2', 'rules', 'merged']),
 });
 
-export function validateFinding(data: unknown): import('../types/index.js').Finding {
+export function validateFinding(data: unknown): Finding {
   return FindingSchema.parse(data) as Finding;
+}
+
+/**
+ * Validate a batch of findings using Zod.
+ * Returns an array of error strings for any findings that fail validation.
+ * Empty array means all findings are schema-compliant.
+ * Used by the finding-schema gate in gates.ts.
+ */
+export function validateFindingBatch(findings: Finding[]): string[] {
+  const errors: string[] = [];
+  for (const [i, finding] of findings.entries()) {
+    const result = FindingSchema.safeParse(finding);
+    if (!result.success) {
+      const issues = result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`);
+      errors.push(
+        `findings[${i}] (${finding.findingId?.slice(0, 8) ?? '?'}): ${issues.join(', ')}`,
+      );
+    }
+  }
+  return errors;
 }
