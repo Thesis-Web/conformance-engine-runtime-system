@@ -120,11 +120,25 @@ function enforceGates(results: GateResult[], stage: string): void {
 // Returns a PackManifest in both cases — Layer 1 always receives PackManifest.
 // ---------------------------------------------------------------------------
 
-async function resolvePack(input: RunCaseInput, artifactRoot: string): Promise<PackManifest> {
+async function resolvePack(
+  input: RunCaseInput,
+  artifactRoot: string,
+  caseId: string,
+  runId: string,
+): Promise<PackManifest> {
   if (input.resolution) {
     const baseManifest = loadPack(input.packManifestPath);
+    // WIRE-GAP-001: inject real caseId and runId from the created run.
+    // The caller (CLI) cannot know these at resolution-input construction time.
+    // The orchestrator owns run creation so it injects them here before the resolver
+    // validates the input. validateResolutionInput() requires both to be non-empty.
+    const resolvedInput = {
+      ...input.resolution.input,
+      caseId: caseId as typeof input.resolution.input.caseId,
+      runId: runId as typeof input.resolution.input.runId,
+    };
     const resResult = await resolveEffectivePack({
-      input: input.resolution.input,
+      input: resolvedInput,
       family: input.resolution.family,
       allModules: input.resolution.modules,
       allOverlays: input.resolution.overlays,
@@ -154,7 +168,7 @@ export async function runCase(input: RunCaseInput): Promise<RunCaseOutput> {
   try {
     // STUB-001: resolve pack — extension or legacy path — before ingesting.
     // ext-spec §11.3: ERR_EFFECTIVE_PACK_NOT_RESOLVED if resolution absent when required.
-    const pack = await resolvePack(input, run.artifactRoot);
+    const pack = await resolvePack(input, run.artifactRoot, caseRecord.caseId, run.runId);
     const packValidation = validatePack(pack);
     if (!packValidation.valid) {
       throw new Error(`pack validation failed: ${packValidation.errors.join(', ')}`);
