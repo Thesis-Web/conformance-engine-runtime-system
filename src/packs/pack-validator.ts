@@ -1,6 +1,6 @@
 import type { PackManifest } from '../types/pack-manifest.js';
 import type { PackId } from '../types/index.js';
-import { brandPackId } from '../types/identifiers.js';
+import { brandPackId, validatePackId } from '../types/identifiers.js';
 
 export interface PackValidationResult {
   valid: boolean;
@@ -38,9 +38,13 @@ const FORBIDDEN_PACK_FIELDS = [
 export function validatePack(manifest: PackManifest): PackValidationResult {
   const errors: string[] = [];
 
-  // 1. PackId
-  if (!VALID_PACK_IDS.includes(manifest.packId)) {
-    errors.push(`unknown packId: ${manifest.packId}`);
+  // 1. PackId — use open identifier system to accept governed pack IDs
+  // VALID_PACK_IDS covers legacy CA packs; validatePackId() covers all governed IDs.
+  const packIdValidation = validatePackId(manifest.packId);
+  if (!packIdValidation.valid) {
+    errors.push(
+      `invalid packId '${manifest.packId}': ${packIdValidation.rejectionReason ?? 'unknown reason'}`,
+    );
   }
 
   // 2. versionIndex
