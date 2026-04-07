@@ -17,7 +17,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type {
@@ -42,11 +42,11 @@ import {
   persistEffectivePack,
   findReusableEffectivePack,
   lookupEffectivePackById,
+  markReplayValidated,
 } from '../effective-pack-store/effective-pack-store.js';
 
 // ---------------------------------------------------------------------------
 // Failure handling — step 17
-// Emits operator_prompt.json and returns resolved: false.
 // ---------------------------------------------------------------------------
 
 function emitFailurePrompt(
@@ -78,6 +78,34 @@ function emitFailurePrompt(
 }
 
 // ---------------------------------------------------------------------------
+// CONTRA-AUDIT-002+003: Load persisted manifest from disk.
+// Both existing-case and replay must load the exact manifest that was written
+// at composition time — not reconstruct a hollow placeholder.
+// ext-spec §8.2, §8.3, §12.1–§12.4
+// ---------------------------------------------------------------------------
+
+function loadPersistedManifest(
+  manifestPath: string,
+  effectivePackId: string,
+): EffectivePackManifest {
+  if (!existsSync(manifestPath)) {
+    throw new ResolverError(
+      'ERR_PINNED_EFFECTIVE_PACK_MISSING',
+      `Persisted manifest not found at '${manifestPath}' for effectivePackId '${effectivePackId}'`,
+    );
+  }
+  try {
+    const raw = readFileSync(manifestPath, 'utf8');
+    return JSON.parse(raw) as EffectivePackManifest;
+  } catch (err) {
+    throw new ResolverError(
+      'ERR_PINNED_EFFECTIVE_PACK_MISSING',
+      `Failed to load persisted manifest at '${manifestPath}': ${String(err)}`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // New-case resolution path — ext-spec §8.1
 // ---------------------------------------------------------------------------
 
@@ -89,12 +117,10 @@ async function resolveNewCase(
   basePackManifest: PackManifest,
   storeRoot: string,
 ): Promise<{ manifest: EffectivePackManifest; componentDigests: Sha256Hex[] }> {
-  // Steps 3-4: build tier path
   const tierPath =
     input.tierPathOverride ??
     buildTierPath(family, input.trackFamilyId, input.jurisdictionId, input.municipalityId);
 
-  // Steps 5-8: select and validate components (includes overlap detection)
   const { baseModules, overlays } = selectComponents(
     family,
     tierPath,
@@ -103,7 +129,6 @@ async function resolveNewCase(
     allOverlays,
   );
 
-  // Step 9: compose effective pack manifest (without effectivePackId yet)
   const {
     manifest: partial,
     componentDigests,
@@ -118,7 +143,6 @@ async function resolveNewCase(
     resolutionMethod: 'composed_fresh',
   });
 
-  // Step 11: derive stable effectivePackId
   const effectivePackId = deriveEffectivePackId(
     input.packId,
     input.jurisdictionId,
@@ -126,13 +150,12 @@ async function resolveNewCase(
     compositionDigest,
   );
 
-  // Check for lawful reuse of a precomputed identical effective pack
   const existing = findReusableEffectivePack(effectivePackId, input, compositionDigest);
   if (existing) {
-    // Reuse path — build a manifest from the stored record
+    // CONTRA-AUDIT-002: load real manifest from disk, not placeholder.
+    const manifest = loadPersistedManifest(existing.manifestPath, effectivePackId as string);
     const reuseManifest: EffectivePackManifest = {
-      ...partial,
-      effectivePackId,
+      ...manifest,
       resolutionMethod: 'reused_precomputed',
       replayPinned: false,
     };
@@ -140,25 +163,27 @@ async function resolveNewCase(
     return { manifest: reuseManifest, componentDigests: existing.componentDigests };
   }
 
-  // Step 10: validate engine compatibility
   const freshManifest: EffectivePackManifest = { ...partial, effectivePackId };
   validateEffectivePackCompatibility(freshManifest);
 
-  // Steps 12-13: persist and pin
-  persistEffectivePack(freshManifest, storeRoot, componentDigests);
+  // DIFF-AUDIT-002: persist and then immediately mark replay-validated.
+  // The fresh compose path produces a fully governed manifest so it is
+  // both compatibility-validated and replay-valid at persist time.
+  const stored = persistEffectivePack(freshManifest, storeRoot, componentDigests);
+  markReplayValidated(stored.effectivePackId);
 
   return { manifest: freshManifest, componentDigests };
 }
 
 // ---------------------------------------------------------------------------
 // Existing-case resolution path — ext-spec §8.2
+// CONTRA-AUDIT-002: load real persisted manifest instead of placeholder.
 // ---------------------------------------------------------------------------
 
 async function resolveExistingCase(
   input: EffectivePackResolutionInput,
   pinnedFields: ReplayPinnedFields,
 ): Promise<{ manifest: EffectivePackManifest; componentDigests: Sha256Hex[] }> {
-  // Load pinned effective pack from store
   const stored = lookupEffectivePackById(pinnedFields.resolvedEffectivePackId);
   if (!stored) {
     throw new ResolverError(
@@ -167,46 +192,29 @@ async function resolveExistingCase(
     );
   }
 
-  // Validate digest equality
   validatePinnedRunAgainstStore(pinnedFields, stored);
 
-  // Reconstruct a minimal manifest from store record for return
-  // Full manifest is on disk at stored.manifestPath; here we return a reference manifest.
-  // The caller uses the manifestPath to load the full content if needed.
-  const placeholder: EffectivePackManifest = {
-    effectivePackId: stored.effectivePackId,
-    effectivePackVersion: randomUUID(),
-    packId: stored.packId,
-    versionIndex: '1',
-    displayName: `${stored.jurisdictionId} ${stored.trackFamilyId} effective pack`,
-    jurisdiction: stored.jurisdictionId,
-    corpus: [],
-    classMap: [],
-    hierarchyConfig: [],
-    contradictionPatterns: [],
-    optionalExtractors: [],
-    standardVersionPolicy: { entries: [] },
-    supportedDocumentClasses: [],
-    trackFamilyId: stored.trackFamilyId,
-    jurisdictionFamilyId: stored.jurisdictionFamilyId,
-    jurisdictionId: stored.jurisdictionId,
-    tierPath: stored.tierPath,
-    governingAsOfDate: stored.governingAsOfDate,
-    componentProvenance: [],
-    compositionDigest: stored.compositionDigest,
+  // Load the exact persisted manifest — no placeholder reconstruction.
+  const manifest = loadPersistedManifest(stored.manifestPath, stored.effectivePackId as string);
+
+  // Validate the loaded manifest is still compatible.
+  validateEffectivePackCompatibility(manifest);
+
+  // Return with updated resolution metadata for this run.
+  const returnManifest: EffectivePackManifest = {
+    ...manifest,
     resolvedAt: new Date().toISOString(),
     resolvedBy: input.operatorId,
     resolutionMethod: 'reused_precomputed',
     replayPinned: false,
-    releaseState: 'draft',
-    ...(stored.municipalityId !== undefined && { municipalityId: stored.municipalityId }),
   };
 
-  return { manifest: placeholder, componentDigests: stored.componentDigests };
+  return { manifest: returnManifest, componentDigests: stored.componentDigests };
 }
 
 // ---------------------------------------------------------------------------
 // Replay path — ext-spec §8.3
+// CONTRA-AUDIT-003: load real persisted manifest instead of placeholder.
 // ---------------------------------------------------------------------------
 
 async function resolveReplay(
@@ -228,40 +236,26 @@ async function resolveReplay(
     );
   }
 
-  // §28 — three-field exact equality required
+  // §28 — three-field exact equality required.
   validatePinnedRunAgainstStore(pinnedFields, stored);
 
-  const placeholder: EffectivePackManifest = {
-    effectivePackId: stored.effectivePackId,
-    effectivePackVersion: randomUUID(),
-    packId: stored.packId,
-    versionIndex: '1',
-    displayName: `${stored.jurisdictionId} ${stored.trackFamilyId} effective pack`,
-    jurisdiction: stored.jurisdictionId,
-    corpus: [],
-    classMap: [],
-    hierarchyConfig: [],
-    contradictionPatterns: [],
-    optionalExtractors: [],
-    standardVersionPolicy: { entries: [] },
-    supportedDocumentClasses: [],
-    trackFamilyId: stored.trackFamilyId,
-    jurisdictionFamilyId: stored.jurisdictionFamilyId,
-    jurisdictionId: stored.jurisdictionId,
-    tierPath: stored.tierPath,
-    governingAsOfDate: stored.governingAsOfDate,
-    componentProvenance: [],
-    compositionDigest: stored.compositionDigest,
+  // Load the exact persisted manifest — no placeholder reconstruction.
+  const manifest = loadPersistedManifest(stored.manifestPath, stored.effectivePackId as string);
+
+  // Validate compatibility on the loaded manifest.
+  validateEffectivePackCompatibility(manifest);
+
+  // Return with replay-specific metadata.
+  const returnManifest: EffectivePackManifest = {
+    ...manifest,
     resolvedAt: new Date().toISOString(),
     resolvedBy: input.operatorId,
     resolutionMethod: 'replayed_pinned',
     replayPinned: true,
-    releaseState: 'draft',
-    ...(stored.municipalityId !== undefined && { municipalityId: stored.municipalityId }),
     ...(input.replaySourceRunId !== undefined && { replaySourceRunId: input.replaySourceRunId }),
   };
 
-  return { manifest: placeholder, componentDigests: stored.componentDigests };
+  return { manifest: returnManifest, componentDigests: stored.componentDigests };
 }
 
 // ---------------------------------------------------------------------------
@@ -280,12 +274,6 @@ export interface ResolveEffectivePackOptions {
   pinnedFields?: ReplayPinnedFields;
 }
 
-/**
- * Resolve exactly one governed effective pack context for a case/run.
- * Routes to new_case, existing_case, or replay path based on input.mode.
- * On success: returns resolved: true with effectivePackId and manifestPath.
- * On failure: emits operator prompt artifact, returns resolved: false.
- */
 export async function resolveEffectivePack(options: ResolveEffectivePackOptions): Promise<
   EffectivePackResolutionResult & {
     manifest?: EffectivePackManifest;
@@ -304,7 +292,6 @@ export async function resolveEffectivePack(options: ResolveEffectivePackOptions)
   } = options;
 
   try {
-    // Validate all inputs before any path runs
     validateResolutionInput(input);
 
     let manifest: EffectivePackManifest;

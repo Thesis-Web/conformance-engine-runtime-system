@@ -2,8 +2,8 @@
  * Effective-pack store — public interface.
  * ext-spec §13
  *
- * Wraps the memory store and reuse checker into a single public API
- * consumed by the resolver paths.
+ * DIFF-AUDIT-002: exports markReplayValidated so resolver can set
+ * replayValidated=true after successful fresh compose + compatibility validation.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -15,12 +15,18 @@ import type {
   EffectivePackResolutionInput,
 } from '../../types/effective-pack.js';
 import type { Sha256Hex } from '../../types/primitives.js';
-import { storeEffectivePack, lookupEffectivePackById } from './effective-pack-store-memory.js';
+import {
+  storeEffectivePack,
+  lookupEffectivePackById,
+  markReplayValidated as markReplayValidatedInMemory,
+} from './effective-pack-store-memory.js';
 import { isLawfullyReusable } from './effective-pack-reuse.js';
 
 /**
  * Persist an effective pack manifest to disk and register its store record.
- * Returns the store record.
+ * Sets compatibilityValidated=true (caller has already validated).
+ * replayValidated starts false — caller must call markReplayValidated() after
+ * confirming the fresh manifest is replay-valid.
  */
 export function persistEffectivePack(
   manifest: EffectivePackManifest,
@@ -47,7 +53,7 @@ export function persistEffectivePack(
     storedAt: new Date().toISOString(),
     manifestPath,
     compatibilityValidated: true,
-    replayValidated: false,
+    replayValidated: false, // set to true by markReplayValidated() after full validation
     ...(manifest.municipalityId !== undefined && { municipalityId: manifest.municipalityId }),
   };
 
@@ -56,8 +62,17 @@ export function persistEffectivePack(
 }
 
 /**
+ * Mark a stored effective pack as replay-validated.
+ * Called by the resolver immediately after a successful fresh compose.
+ * ext-spec §19.1, §19.4 — replayValidated must be true for lawful reuse.
+ */
+export function markReplayValidated(effectivePackId: EffectivePackId): void {
+  markReplayValidatedInMemory(effectivePackId);
+}
+
+/**
  * Look up an effective pack by id and validate reuse is lawful.
- * Returns the record if reusable, undefined otherwise.
+ * Returns the record if reusable (all §19.1 preconditions met), undefined otherwise.
  */
 export function findReusableEffectivePack(
   effectivePackId: EffectivePackId,

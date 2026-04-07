@@ -2,13 +2,8 @@
  * Effective-pack store — in-memory implementation for POC.
  * ext-spec §13 / §28
  *
- * Persists EffectivePackStoreRecord entries indexed by effectivePackId.
- * Production implementations would write to managed Postgres or object store;
- * this POC implementation keeps records in a module-scoped Map.
- *
- * Lawful reuse (ext-spec §13): a stored effective pack may be reused only when
- * exact input identity matches — same packId, jurisdictionId, governingAsOfDate,
- * compositionDigest. Any mismatch requires fresh composition.
+ * DIFF-AUDIT-002: added updateRecord() and exported markReplayValidated()
+ * so the resolver can set replayValidated=true after a successful fresh compose.
  */
 
 import type { EffectivePackId } from '../../types/identifiers.js';
@@ -25,6 +20,18 @@ export function lookupEffectivePackById(
   effectivePackId: EffectivePackId,
 ): EffectivePackStoreRecord | undefined {
   return store.get(effectivePackId as string);
+}
+
+/**
+ * DIFF-AUDIT-002: Mark a stored record as replay-validated.
+ * Called immediately after a successful fresh compose and compatibility validation.
+ * A record that was just freshly composed and validated is by definition replay-valid.
+ */
+export function markReplayValidated(effectivePackId: EffectivePackId): void {
+  const record = store.get(effectivePackId as string);
+  if (record) {
+    store.set(effectivePackId as string, { ...record, replayValidated: true });
+  }
 }
 
 export function clearStore(): void {

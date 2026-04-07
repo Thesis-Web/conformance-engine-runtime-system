@@ -451,7 +451,7 @@ describe('lawful reuse', () => {
     storedAt: '2025-01-01T00:00:00Z',
     manifestPath: 'test',
     compatibilityValidated: true,
-    replayValidated: false,
+    replayValidated: true,
   };
 
   it('returns true when all identity fields match', () => {
