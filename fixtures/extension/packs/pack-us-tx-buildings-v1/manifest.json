@@ -202,5 +202,7 @@
     "STD_REFERENCE",
     "MFR_SUBMITTAL",
     "FIELD_ANNOTATION"
-  ]
+  ],
+  "caseMinimumRequiredClasses": ["DESIGN_PLANS", "TEST_REPORT", "ENG_LETTER", "STD_REFERENCE"],
+  "caseOneOfRequiredClasses": ["COMPLIANCE_CERT", "MFR_SUBMITTAL", "FIELD_ANNOTATION"]
 }

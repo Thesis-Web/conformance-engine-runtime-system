@@ -186,5 +186,7 @@
     "ENG_LETTER",
     "DESIGN_PLANS",
     "STD_REFERENCE"
-  ]
+  ],
+  "caseMinimumRequiredClasses": ["DESIGN_PLANS", "SPEC_SHEET", "TEST_REPORT", "STD_REFERENCE"],
+  "caseOneOfRequiredClasses": []
 }

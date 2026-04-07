@@ -55,7 +55,19 @@ Use narrativeDescription that is clear and source-cited.`;
   const text = data.content?.[0]?.text || '[]';
 
   try {
-    const rawFindings = JSON.parse(text) as any[];
+    const parsed = JSON.parse(text) as unknown;
+    if (!Array.isArray(parsed)) {
+      // Model returned a non-array (e.g. error object or wrapped response).
+      // Log clearly — this is not an empty-findings result, it is a malformed response.
+      return {
+        proposedFindings: [],
+        extractionNotes: [
+          `Pass1 model returned non-array response type '${typeof parsed}'. ` +
+            `Response preview: ${JSON.stringify(parsed).slice(0, 200)}`,
+        ],
+      };
+    }
+    const rawFindings = parsed as any[];
     const proposedFindings: Finding[] = rawFindings.map((f: any) => ({
       findingId: f.findingId || randomUUID(),
       runId: input.run.runId,

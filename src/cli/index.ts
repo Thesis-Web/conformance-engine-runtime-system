@@ -5,7 +5,8 @@ import { loadPack, packExists } from '../packs/pack-loader.js';
 import { validatePack } from '../packs/pack-validator.js';
 import { runCase, type ResolutionBundle } from '../orchestration/run-orchestrator.js';
 import type { PackId } from '../types/index.js';
-import { brandPackId, validatePackId } from '../types/identifiers.js';
+import { brandPackId, brandTrackFamilyId, validatePackId } from '../types/identifiers.js';
+import { parseEffectivePackId } from '../packs/effective/effective-pack-id.js';
 import { loadJurisdictionFamilyConfig } from '../packs/jurisdiction-families/jurisdiction-family-loader.js';
 import { loadBaseStandardsModulesFromDir } from '../packs/base-modules/base-standards-loader.js';
 import { loadTierOverlaysFromDir } from '../packs/tier-overlays/tier-overlay-loader.js';
@@ -30,6 +31,12 @@ const USAGE = `Usage:
   cers validate-pack --manifest <path>
   cers validate-run  --run <runDir>
   cers replay-run    --run <runDir>
+  cers replay-case   --case <casePath> --pack <packManifestPath>
+                     --source-run <priorRunDir>
+                     --track-family <id> --jurisdiction-family <id>
+                     --jurisdiction-id <id> --governing-as-of <YYYY-MM-DD>
+                     [--municipality-id <id>] [--fixture-root <path>]
+                     [--store-root <path>]
 
 Resolution flags (run-case only):
   --track-family       TrackFamilyId (e.g. buildings)
@@ -49,6 +56,7 @@ export async function main(): Promise<void> {
       case: { type: 'string' },
       manifest: { type: 'string' },
       run: { type: 'string' },
+      'source-run': { type: 'string' },
       // Resolution flags — STUB-001
       'track-family': { type: 'string' },
       'jurisdiction-family': { type: 'string' },
@@ -250,6 +258,133 @@ export async function main(): Promise<void> {
       }
       const result = replayRun(resolve(runDir));
       console.log(JSON.stringify(result, null, 2));
+      break;
+    }
+    case 'replay-case': {
+      // SOLVE-017-004: replay a prior run's effective pack resolution.
+      // Reads pinned fields from source run.json, validates effectivePackId,
+      // hydrates the store from disk, then calls runCase() with mode:replay.
+      const casePath = args.values['case'];
+      const packManifestPath = args.values['pack'];
+      const sourceRunDir = args.values['source-run'];
+      const trackFamily = args.values['track-family'];
+      const jurisdictionFamily = args.values['jurisdiction-family'];
+      const jurisdictionId = args.values['jurisdiction-id'];
+      const governingAsOf = args.values['governing-as-of'];
+
+      if (!casePath || !packManifestPath || !sourceRunDir) {
+        console.error('replay-case requires --case, --pack, and --source-run');
+        process.exit(1);
+      }
+      if (!trackFamily || !jurisdictionFamily || !jurisdictionId || !governingAsOf) {
+        console.error(
+          'replay-case requires --track-family, --jurisdiction-family, --jurisdiction-id, --governing-as-of',
+        );
+        process.exit(1);
+      }
+
+      // Read pinned fields from the source run record
+      const { readFileSync: readFS, existsSync: existsFS } = await import('node:fs');
+      const { resolve: resolveFS, join: joinFS } = await import('node:path');
+      const sourceRunJson = joinFS(resolveFS(sourceRunDir), 'run.json');
+      if (!existsFS(sourceRunJson)) {
+        console.error(`Source run.json not found: ${sourceRunJson}`);
+        process.exit(1);
+      }
+      const sourceRun = JSON.parse(readFS(sourceRunJson, 'utf8')) as Record<string, unknown>;
+
+      const resolvedEffectivePackId = sourceRun['resolvedEffectivePackId'];
+      const compositionDigest = sourceRun['compositionDigest'];
+      const componentDigests = sourceRun['componentDigests'];
+
+      if (
+        typeof resolvedEffectivePackId !== 'string' ||
+        typeof compositionDigest !== 'string' ||
+        !Array.isArray(componentDigests)
+      ) {
+        console.error(
+          'Source run.json is missing extension resolution fields (resolvedEffectivePackId, compositionDigest, componentDigests).',
+        );
+        console.error(
+          'Only runs that were executed with extension resolution flags can be replayed.',
+        );
+        process.exit(1);
+      }
+
+      // Validate the effectivePackId string — parseEffectivePackId() is its intended caller
+      const effectivePackId = parseEffectivePackId(resolvedEffectivePackId);
+
+      const fixtureRoot = resolveFS(args.values['fixture-root'] ?? 'fixtures/extension');
+      const storeRoot = resolveFS(
+        args.values['store-root'] ?? 'fixtures/extension/effective-pack-store',
+      );
+
+      const { loadJurisdictionFamilyConfig: loadFamily } =
+        await import('../packs/jurisdiction-families/jurisdiction-family-loader.js');
+      const { loadBaseStandardsModulesFromDir: loadModules } =
+        await import('../packs/base-modules/base-standards-loader.js');
+      const { loadTierOverlaysFromDir: loadOverlays } =
+        await import('../packs/tier-overlays/tier-overlay-loader.js');
+
+      const familyConfigPath = joinFS(
+        fixtureRoot,
+        'jurisdiction-families',
+        `${jurisdictionFamily}.json`,
+      );
+      const family = loadFamily(familyConfigPath);
+      const modules = loadModules(joinFS(fixtureRoot, 'base-modules'));
+      const overlays = loadOverlays(joinFS(fixtureRoot, 'tier-overlays'));
+      const baseManifest = loadPack(resolveFS(packManifestPath));
+
+      const resolutionInput = {
+        mode: 'replay' as const,
+        caseId: '' as Parameters<typeof brandPackId>[0], // filled by orchestrator
+        runId: '' as Parameters<typeof brandPackId>[0], // filled by orchestrator
+        packId: baseManifest.packId,
+        trackFamilyId: brandTrackFamilyId(trackFamily),
+        jurisdictionFamilyId: jurisdictionFamily,
+        jurisdictionId,
+        governingAsOfDate: governingAsOf,
+        operatorId: 'cli-operator',
+        replaySourceRunId: sourceRun['runId'] as string as Parameters<typeof brandPackId>[0],
+        ...(args.values['municipality-id'] !== undefined && {
+          municipalityId: args.values['municipality-id'],
+        }),
+      };
+
+      const resolution = {
+        input: resolutionInput,
+        family,
+        modules,
+        overlays,
+        storeRoot,
+        pinnedFields: {
+          resolvedEffectivePackId: String(effectivePackId),
+          compositionDigest,
+          componentDigests: componentDigests as string[],
+        },
+      };
+
+      console.log(`Replay mode: effective pack ${String(effectivePackId)}`);
+
+      const result = await runCase({
+        casePath: resolveFS(casePath),
+        packManifestPath: resolveFS(packManifestPath),
+        resolution,
+      });
+      console.log(
+        JSON.stringify(
+          {
+            runId: result.run.runId,
+            status: result.run.status,
+            artifactRoot: result.artifactRoot,
+            replayedFrom: resolvedEffectivePackId,
+            gates: result.gateResults.map((g) => ({ gate: g.gateName, passed: g.passed })),
+          },
+          null,
+          2,
+        ),
+      );
       break;
     }
     default: {

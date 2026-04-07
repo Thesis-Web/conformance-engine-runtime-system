@@ -13,6 +13,18 @@ export interface PackManifest {
   optionalExtractors: ExtractorHint[];
   standardVersionPolicy: StandardVersionPolicy;
   supportedDocumentClasses: DocumentClass[];
+  /**
+   * Spec §26 — required document classes for a valid case run under this pack.
+   * RULE-HOLE-001 emits a HOLE finding for each class in this list that is absent.
+   * Pack-defined rather than hardcoded so new jurisdictions need no engine changes.
+   */
+  caseMinimumRequiredClasses?: DocumentClass[];
+  /**
+   * Spec §26.2 (buildings track) — at least one of these classes must be present.
+   * If none are present, RULE-HOLE-001 emits a single HOLE with 'one-of-optional' tag.
+   * Empty array or absent means no one-of constraint applies.
+   */
+  caseOneOfRequiredClasses?: DocumentClass[];
 }
 
 export interface CorpusEntry {

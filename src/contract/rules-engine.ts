@@ -102,34 +102,14 @@ const RULE_CERT_001: DeterministicRule = {
 };
 
 // ---------------------------------------------------------------------------
-// DRIFT-003 fix: RULE_HOLE_001 — per-pack case-minimum required classes.
+// SOLVE-017-001: RULE_HOLE_001 — per-pack case-minimum required classes.
 //
-// Spec §26.2–§26.4 defines required class sets per pack, not all supported
-// classes. Previously RULE_HOLE_001 iterated supportedDocumentClasses and
-// emitted HOLE for any absent class — far broader than spec requires.
-//
-// Case minimums per spec:
-//   Pack v1 (§26.2): DESIGN_PLANS, TEST_REPORT, ENG_LETTER, STD_REFERENCE
-//                    required; plus at least one of COMPLIANCE_CERT,
-//                    MFR_SUBMITTAL, FIELD_ANNOTATION.
-//   Pack v2 (§26.3): SPEC_SHEET, TEST_REPORT, MFR_SUBMITTAL, STD_REFERENCE
-//   Pack v3 (§26.4): DESIGN_PLANS (or equivalent schedule), SPEC_SHEET,
-//                    TEST_REPORT, STD_REFERENCE
+// Spec §26.2–§26.4 defines required class sets per pack. Previously these were
+// hardcoded in the engine, which meant TX and future-jurisdiction packs got no
+// HOLE detection. Required classes are now declared in each pack manifest via
+// caseMinimumRequiredClasses and caseOneOfRequiredClasses fields, making the
+// rule pack-agnostic. New jurisdictions need no engine changes.
 // ---------------------------------------------------------------------------
-
-const PACK_REQUIRED_CLASSES: Readonly<Record<string, readonly string[]>> = {
-  'pack-california-highrise-v1': ['DESIGN_PLANS', 'TEST_REPORT', 'ENG_LETTER', 'STD_REFERENCE'],
-  'pack-california-appliance-refrig-v2': [
-    'SPEC_SHEET',
-    'TEST_REPORT',
-    'MFR_SUBMITTAL',
-    'STD_REFERENCE',
-  ],
-  'pack-california-datacenter-v3': ['DESIGN_PLANS', 'SPEC_SHEET', 'TEST_REPORT', 'STD_REFERENCE'],
-};
-
-// Pack v1 also requires at least one of these three optional classes (§26.2)
-const PACK_V1_OPTIONAL_ONE_OF = ['COMPLIANCE_CERT', 'MFR_SUBMITTAL', 'FIELD_ANNOTATION'] as const;
 
 const RULE_HOLE_001: DeterministicRule = {
   ruleId: 'RULE-HOLE-001',
@@ -153,7 +133,11 @@ const RULE_HOLE_001: DeterministicRule = {
       presentClasses.add(pair.parameterKey);
     }
 
-    const requiredClasses = PACK_REQUIRED_CLASSES[input.pack.packId] ?? [];
+    // SOLVE-017-001: read required classes from pack manifest, not hardcoded map.
+    // Any pack that declares caseMinimumRequiredClasses gets HOLE detection.
+    // Packs without the field (legacy or not yet updated) get no HOLE detection — safe degradation.
+    const requiredClasses = input.pack.caseMinimumRequiredClasses ?? [];
+    const oneOfClasses = input.pack.caseOneOfRequiredClasses ?? [];
     const existingNarratives = new Set(input.findings.map((f) => f.narrativeDescription));
 
     for (const docClass of requiredClasses) {
@@ -161,7 +145,7 @@ const RULE_HOLE_001: DeterministicRule = {
 
       const narrativeDescription =
         `Required document class '${docClass}' is absent from the case package. ` +
-        `Pack ${input.pack.packId} mandates this class for a valid POC run per spec §26.`;
+        `Pack ${input.pack.packId} mandates this class for a valid case run per spec §26.`;
 
       if (existingNarratives.has(narrativeDescription)) continue;
 
@@ -189,12 +173,13 @@ const RULE_HOLE_001: DeterministicRule = {
       });
     }
 
-    // Pack v1 §26.2: also require at least one of COMPLIANCE_CERT / MFR_SUBMITTAL / FIELD_ANNOTATION
-    if (input.pack.packId === 'pack-california-highrise-v1') {
-      const hasOneOf = PACK_V1_OPTIONAL_ONE_OF.some((cls) => presentClasses.has(cls));
+    // One-of constraint: at least one of the declared classes must be present.
+    // Applies to any pack that declares a non-empty caseOneOfRequiredClasses list.
+    if (oneOfClasses.length > 0) {
+      const hasOneOf = oneOfClasses.some((cls) => presentClasses.has(cls));
       if (!hasOneOf) {
         const narrativeDescription =
-          `Pack v1 requires at least one of: ${PACK_V1_OPTIONAL_ONE_OF.join(', ')}. ` +
+          `Pack ${input.pack.packId} requires at least one of: ${oneOfClasses.join(', ')}. ` +
           `None are present in the case package.`;
         if (!existingNarratives.has(narrativeDescription)) {
           results.push({
@@ -214,7 +199,7 @@ const RULE_HOLE_001: DeterministicRule = {
               sourceARefId: 'PACK:ONE_OF_OPTIONAL',
               escalationRequired: false,
               narrativeDescription,
-              resolutionPath: `Add at least one of: ${PACK_V1_OPTIONAL_ONE_OF.join(', ')}.`,
+              resolutionPath: `Add at least one of: ${oneOfClasses.join(', ')}.`,
               tags: ['RULE-HOLE-001', 'one-of-optional'],
               emittedBy: 'rules',
             },

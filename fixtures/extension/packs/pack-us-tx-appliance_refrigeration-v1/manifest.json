@@ -155,5 +155,7 @@
     "MFR_SUBMITTAL",
     "STD_REFERENCE",
     "ENG_LETTER"
-  ]
+  ],
+  "caseMinimumRequiredClasses": ["SPEC_SHEET", "TEST_REPORT", "MFR_SUBMITTAL", "STD_REFERENCE"],
+  "caseOneOfRequiredClasses": []
 }

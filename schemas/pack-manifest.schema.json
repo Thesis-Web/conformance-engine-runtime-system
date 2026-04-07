@@ -25,9 +25,15 @@
         "pack-california-datacenter-v3"
       ]
     },
-    "versionIndex": { "type": "string" },
-    "displayName": { "type": "string" },
-    "jurisdiction": { "type": "string" },
+    "versionIndex": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "jurisdiction": {
+      "type": "string"
+    },
     "corpus": {
       "type": "array",
       "items": {
@@ -42,13 +48,19 @@
           "citationKey"
         ],
         "properties": {
-          "corpusId": { "type": "string" },
+          "corpusId": {
+            "type": "string"
+          },
           "authority": {
             "type": "string",
             "enum": ["primary", "secondary", "reference"]
           },
-          "title": { "type": "string" },
-          "versionLabel": { "type": "string" },
+          "title": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
           "ownershipPackId": {
             "type": "string",
             "enum": [
@@ -57,9 +69,15 @@
               "pack-california-datacenter-v3"
             ]
           },
-          "citationKey": { "type": "string" },
-          "localPath": { "type": "string" },
-          "externalReference": { "type": "string" }
+          "citationKey": {
+            "type": "string"
+          },
+          "localPath": {
+            "type": "string"
+          },
+          "externalReference": {
+            "type": "string"
+          }
         }
       }
     },
@@ -70,7 +88,9 @@
         "additionalProperties": false,
         "required": ["ruleId", "docClass", "matchCriteria", "confidence", "priority"],
         "properties": {
-          "ruleId": { "type": "string" },
+          "ruleId": {
+            "type": "string"
+          },
           "docClass": {
             "type": "string",
             "enum": [
@@ -84,9 +104,15 @@
               "FIELD_ANNOTATION"
             ]
           },
-          "matchCriteria": { "type": "string" },
-          "confidence": { "type": "number" },
-          "priority": { "type": "number" }
+          "matchCriteria": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "priority": {
+            "type": "number"
+          }
         }
       }
     },
@@ -97,8 +123,12 @@
         "additionalProperties": false,
         "required": ["hierarchyId", "description", "higher", "lower"],
         "properties": {
-          "hierarchyId": { "type": "string" },
-          "description": { "type": "string" },
+          "hierarchyId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "higher": {
             "type": "string",
             "enum": [
@@ -127,7 +157,9 @@
               "source_lane"
             ]
           },
-          "condition": { "type": "string" }
+          "condition": {
+            "type": "string"
+          }
         }
       }
     },
@@ -138,8 +170,12 @@
         "additionalProperties": false,
         "required": ["patternId", "description", "docClasses", "parameterKeys", "severityDefault"],
         "properties": {
-          "patternId": { "type": "string" },
-          "description": { "type": "string" },
+          "patternId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "docClasses": {
             "type": "array",
             "items": {
@@ -158,7 +194,9 @@
           },
           "parameterKeys": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "severityDefault": {
             "type": "string",
@@ -174,7 +212,9 @@
         "additionalProperties": false,
         "required": ["hintId", "appliesTo", "hintType"],
         "properties": {
-          "hintId": { "type": "string" },
+          "hintId": {
+            "type": "string"
+          },
           "appliesTo": {
             "type": "array",
             "items": {
@@ -201,8 +241,12 @@
               "keyword_bias"
             ]
           },
-          "pattern": { "type": "string" },
-          "note": { "type": "string" }
+          "pattern": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
         }
       }
     },
@@ -224,12 +268,20 @@
               "staleBehavior"
             ],
             "properties": {
-              "standardId": { "type": "string" },
-              "citationKey": { "type": "string" },
-              "currentAdoptedVersion": { "type": "string" },
+              "standardId": {
+                "type": "string"
+              },
+              "citationKey": {
+                "type": "string"
+              },
+              "currentAdoptedVersion": {
+                "type": "string"
+              },
               "allowedVersions": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "staleBehavior": {
                 "type": "string",
@@ -254,6 +306,20 @@
           "MFR_SUBMITTAL",
           "FIELD_ANNOTATION"
         ]
+      }
+    },
+    "caseMinimumRequiredClasses": {
+      "description": "Document classes required for a valid case run. RULE-HOLE-001 emits HOLE for each absent class.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "caseOneOfRequiredClasses": {
+      "description": "At least one of these document classes must be present. Empty array means no constraint.",
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

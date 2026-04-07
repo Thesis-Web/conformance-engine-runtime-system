@@ -6,7 +6,7 @@
  * replayValidated=true after successful fresh compose + compatibility validation.
  */
 
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { EffectivePackId } from '../../types/identifiers.js';
 import type {
@@ -83,6 +83,70 @@ export function findReusableEffectivePack(
   if (!record) return undefined;
   if (!isLawfullyReusable(record, input, compositionDigest)) return undefined;
   return record;
+}
+
+/**
+ * Hydrate the in-memory effective-pack store from persisted manifests on disk.
+ * Call this at the start of any CLI invocation that provides a storeRoot so that
+ * effective packs composed in prior runs are available for lawful reuse without
+ * recomposing from scratch. ext-spec §13 — store must be available across
+ * separate operator invocations.
+ *
+ * Reconstruction: all fields needed for EffectivePackStoreRecord can be derived
+ * from the persisted EffectivePackManifest JSON. componentIds and componentDigests
+ * come from componentProvenance. Both validation flags are assumed true because
+ * persistence only occurs after a successful fresh compose and validation.
+ */
+export function hydrateStoreFromDisk(storeRoot: string): number {
+  if (!existsSync(storeRoot)) return 0;
+
+  let loaded = 0;
+  let entries: string[];
+  try {
+    entries = readdirSync(storeRoot);
+  } catch {
+    return 0;
+  }
+
+  for (const entry of entries) {
+    const manifestPath = join(storeRoot, entry, 'effective-pack-manifest.json');
+    if (!existsSync(manifestPath)) continue;
+
+    try {
+      const raw = JSON.parse(readFileSync(manifestPath, 'utf8')) as EffectivePackManifest;
+
+      // Validate minimum required fields before registering
+      if (!raw.effectivePackId || !raw.compositionDigest || !raw.packId) continue;
+      if (!raw.trackFamilyId || !raw.jurisdictionFamilyId || !raw.jurisdictionId) continue;
+      if (!Array.isArray(raw.componentProvenance)) continue;
+
+      const record: EffectivePackStoreRecord = {
+        effectivePackId: raw.effectivePackId,
+        compositionDigest: raw.compositionDigest,
+        packId: raw.packId,
+        trackFamilyId: raw.trackFamilyId,
+        jurisdictionFamilyId: raw.jurisdictionFamilyId,
+        jurisdictionId: raw.jurisdictionId,
+        tierPath: raw.tierPath,
+        governingAsOfDate: raw.governingAsOfDate,
+        componentIds: raw.componentProvenance.map((cp) => cp.componentId),
+        componentDigests: raw.componentProvenance.map((cp) => cp.digest),
+        storedAt: raw.resolvedAt,
+        manifestPath,
+        // Both flags assumed true: file was written only after successful compose + validation.
+        compatibilityValidated: true,
+        replayValidated: true,
+        ...(raw.municipalityId !== undefined && { municipalityId: raw.municipalityId }),
+      };
+
+      storeEffectivePack(record);
+      loaded++;
+    } catch {
+      // Malformed or unreadable manifest — skip silently; best-effort hydration.
+    }
+  }
+
+  return loaded;
 }
 
 export { lookupEffectivePackById } from './effective-pack-store-memory.js';

@@ -2,3 +2,9 @@
 # Spec §32.7 — scope-change-log gate checks this file for owner-approved marker.
 # No scope changes pending as of v0.1.0 spec-clean build.
 # owner-approved: confirmed no unapproved scope expansions in this build.
+
+DIFF-017-001 | src/types/extension-case-run.ts | deleted | 2026-04-07
+  Reason: audit-016 repair (CONTRA-016-001) merged CaseRecordExtension and
+  RunRecordExtension fields directly into CaseRecord and RunRecord in contracts.ts.
+  The side-interface file became dead weight with no importers. Trimmed.
+  owner-approved via SOLVE-017-002 session approval.

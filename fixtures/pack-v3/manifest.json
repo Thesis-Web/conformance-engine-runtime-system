@@ -342,5 +342,7 @@
         "staleBehavior": "warn"
       }
     ]
-  }
+  },
+  "caseMinimumRequiredClasses": ["DESIGN_PLANS", "SPEC_SHEET", "TEST_REPORT", "STD_REFERENCE"],
+  "caseOneOfRequiredClasses": []
 }

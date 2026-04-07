@@ -270,5 +270,7 @@
         "staleBehavior": "warn"
       }
     ]
-  }
+  },
+  "caseMinimumRequiredClasses": ["SPEC_SHEET", "TEST_REPORT", "MFR_SUBMITTAL", "STD_REFERENCE"],
+  "caseOneOfRequiredClasses": []
 }

@@ -28,6 +28,8 @@ import {
   type RulesOutput,
 } from '../core/finding-merge.js';
 import { resolveEffectivePack } from './resolver/resolve-effective-pack.js';
+import { hydrateStoreFromDisk } from './effective-pack-store/effective-pack-store.js';
+import type { ReplayPinnedFields } from './resolver/replay-resolution.js';
 import { projectToBasePackManifest } from '../packs/effective/effective-pack-compatibility.js';
 import type {
   BaseStandardsModule,
@@ -71,6 +73,15 @@ export interface ResolutionBundle {
   overlays: TierOverlay[];
   /** Root directory for effective-pack store persistence. */
   storeRoot: string;
+  /**
+   * Required for existing_case and replay modes — pinned fields from the source run.
+   * Absent for new_case mode.
+   */
+  pinnedFields?: {
+    resolvedEffectivePackId: string;
+    compositionDigest: string;
+    componentDigests: string[];
+  };
 }
 
 export interface RunCaseInput {
@@ -153,6 +164,22 @@ async function resolvePack(
       caseId: caseId as typeof input.resolution.input.caseId,
       runId: runId as typeof input.resolution.input.runId,
     };
+    // SOLVE-017-005: hydrate in-memory store from disk before resolving.
+    // This makes effective packs composed in prior invocations available for
+    // lawful reuse without recomposing from scratch.
+    hydrateStoreFromDisk(input.resolution.storeRoot);
+
+    const pinnedFields = input.resolution.pinnedFields
+      ? ({
+          resolvedEffectivePackId: input.resolution.pinnedFields
+            .resolvedEffectivePackId as ReplayPinnedFields['resolvedEffectivePackId'],
+          compositionDigest: input.resolution.pinnedFields
+            .compositionDigest as ReplayPinnedFields['compositionDigest'],
+          componentDigests: input.resolution.pinnedFields
+            .componentDigests as ReplayPinnedFields['componentDigests'],
+        } satisfies ReplayPinnedFields)
+      : undefined;
+
     const resResult = await resolveEffectivePack({
       input: resolvedInput,
       family: input.resolution.family,
@@ -161,6 +188,7 @@ async function resolvePack(
       basePackManifest: baseManifest,
       storeRoot: input.resolution.storeRoot,
       artifactRoot,
+      ...(pinnedFields !== undefined && { pinnedFields }),
     });
     if (!resResult.resolved || !resResult.manifest) {
       throw new Error(
